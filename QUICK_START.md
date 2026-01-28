@@ -123,15 +123,15 @@ Copy to your `.env.local`:
 
 ```bash
 # Already set:
-PAYSTACK_SECRET_KEY="sk_live_82a3c8a078c448bf69f20f6a34d0454c4ebb01ec"
-PAYSTACK_PUBLIC_KEY="pk_live_b147e795a1240956224f4b7643b1286c62b42045"
+PAYSTACK_SECRET_KEY="your-paystack-live-secret-key"
+PAYSTACK_PUBLIC_KEY="your-paystack-live-public-key"
 
 # You need to add:
 NEXT_PUBLIC_SUPABASE_URL="https://YOUR_PROJECT.supabase.co"
 NEXT_PUBLIC_SUPABASE_ANON_KEY="your-anon-key"
 SUPABASE_SERVICE_ROLE_KEY="your-service-key"
 RESEND_API_KEY="re_your_key"
-NEXTAUTH_SECRET="generate-random-32-char-string"
+NEXTAUTH_SECRET="your-nextauth-secret"
 NEXTAUTH_URL="http://localhost:3000"
 ```
 
