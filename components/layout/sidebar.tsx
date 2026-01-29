@@ -9,13 +9,16 @@ import {
     Briefcase,
     Shield,
     Settings,
+    User, // Added User icon
     Users,
     LogOut,
     Bell,
     Search,
-    MessageSquare
+    MessageSquare,
+    Target
 } from 'lucide-react';
 import { signOut } from 'next-auth/react';
+import { ThemeToggle } from '@/components/ui/ThemeToggle';
 
 const menuItems = {
     admin: [
@@ -23,22 +26,30 @@ const menuItems = {
         { name: 'Payments', icon: CreditCard, href: '/dashboard/admin/payments' },
         { name: 'Projects', icon: Briefcase, href: '/dashboard/admin/projects' },
         { name: 'Users', icon: Users, href: '/dashboard/admin/users' },
+        { name: 'Profile', icon: User, href: '/dashboard/profile' },
     ],
     client: [
         { name: 'Dashboard', icon: LayoutDashboard, href: '/dashboard/client' },
+        { name: 'Messages', icon: MessageSquare, href: '/dashboard/client/messages' },
         { name: 'Find Talent', icon: Search, href: '/dashboard/client/discovery' },
         { name: 'My Projects', icon: Briefcase, href: '/dashboard/client/projects' },
         { name: 'Payments', icon: CreditCard, href: '/dashboard/client/payments' },
+        { name: 'Profile', icon: User, href: '/dashboard/profile' },
     ],
     commissioner: [
-        { name: 'Pipeline', icon: LayoutDashboard, href: '/dashboard/commissioner' },
-        { name: 'Leads', icon: Users, href: '/dashboard/commissioner/leads' },
-        { name: 'Earnings', icon: CreditCard, href: '/dashboard/commissioner/earnings' },
+        { name: 'Dashboard', href: '/dashboard/commissioner', icon: LayoutDashboard },
+        { name: 'Leads', href: '/dashboard/commissioner/leads', icon: Target },
+        { name: 'Team', href: '/dashboard/commissioner/team', icon: Users },
+        { name: 'Profile', href: '/dashboard/profile', icon: User },
+        { name: 'Messages', href: '/dashboard/commissioner/messages', icon: MessageSquare },
+        { name: 'Invoices', href: '/dashboard/commissioner/invoices', icon: CreditCard },
     ],
     developer: [
         { name: 'Work Queue', icon: LayoutDashboard, href: '/dashboard/developer' },
+        { name: 'Messages', icon: MessageSquare, href: '/dashboard/developer/messages' },
         { name: 'Active Jobs', icon: Briefcase, href: '/dashboard/developer/jobs' },
         { name: 'Earnings', icon: CreditCard, href: '/dashboard/developer/earnings' },
+        { name: 'Profile', icon: User, href: '/dashboard/profile' },
     ]
 };
 
@@ -102,10 +113,13 @@ export function Sidebar({ role }: { role: 'admin' | 'client' | 'commissioner' | 
             </nav>
 
             {/* User Footer */}
-            <div className="mt-auto p-4 border-t border-gray-100 bg-gray-50/50">
+            <div className="mt-auto p-4 border-t border-[var(--bg-input)] bg-[var(--bg-card)]/50 space-y-2">
+                <div className="flex items-center justify-center mb-3">
+                    <ThemeToggle />
+                </div>
                 <button
                     onClick={() => signOut({ callbackUrl: '/login' })}
-                    className="flex items-center gap-3 px-4 py-3 w-full rounded-xl text-gray-500 hover:bg-red-50/80 hover:text-red-600 hover:shadow-[0_2px_10px_rgba(239,68,68,0.1)] transition-all duration-300 group border border-transparent hover:border-red-100"
+                    className="flex items-center gap-3 px-4 py-3 w-full rounded-xl text-[var(--text-secondary)] hover:bg-red-500/10 hover:text-red-600 hover:shadow-[0_2px_10px_rgba(239,68,68,0.1)] transition-all duration-300 group border border-transparent hover:border-red-200"
                 >
                     <LogOut className="w-5 h-5 transition-transform group-hover:-translate-x-1 group-hover:scale-110" />
                     <span className="font-semibold">Logout</span>

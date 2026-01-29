@@ -1,54 +1,86 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { paystackPayments } from '@/lib/payments/paystack';
-import { emailService } from '@/lib/email';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
+import { supabaseAdmin } from '@/lib/db';
 
-export async function POST(request: NextRequest) {
+// GET: List invoices (Admin or Commissioner)
+export async function GET(req: NextRequest) {
     try {
-        const body = await request.json();
-        const { client_name, client_email, amount, description, invoice_number } = body;
+        const session = await getServerSession(authOptions);
+        if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-        // 1. Generate Payment Link via Paystack
-        // We use the initializeTransaction but we might not need to store it in our DB immediately 
-        // if this is a "Quick Invoice". But for safety, we should prob treat it like a generic transaction.
-        // For simplicity towards the User Request (speed), we'll just generate the link.
-        // Paystack initialize returns { authorization_url, access_code, reference }
+        const { searchParams } = new URL(req.url);
+        const status = searchParams.get('status');
 
-        const paystackResponse = await paystackPayments.initializeTransaction(
-            client_email,
-            Number(amount), // Paystack expects KES
-            undefined, // Use default callback
-            {
-                custom_fields: [
-                    { display_name: "Invoice Number", variable_name: "invoice_number", value: invoice_number },
-                    { display_name: "Client Name", variable_name: "client_name", value: client_name }
-                ],
-                invoice_number, // Root level metadata
-                description
-            }
-        );
+        let query = supabaseAdmin
+            .from('invoices')
+            .select(`
+                *,
+                client:clients(name, email),
+                project:projects(title)
+            `)
+            .order('created_at', { ascending: false });
 
-        if (!paystackResponse || !paystackResponse.data) {
-            throw new Error('Failed to generate payment link from Paystack');
+        if (status) {
+            query = query.eq('status', status);
         }
 
-        const paymentUrl = paystackResponse.data.authorization_url;
+        // If not admin, maybe filter by their projects? 
+        // For now assuming this endpoint is primarily for the Admin Dashboard
 
-        // 2. Send Premium Email
-        await emailService.sendInvoice(
-            client_email,
-            client_name,
+        const { data, error } = await query;
+        if (error) throw error;
+
+        return NextResponse.json({ success: true, data });
+    } catch (error: any) {
+        return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    }
+}
+
+// POST: Create a new Invoice Request (Pending Approval)
+export async function POST(request: NextRequest) {
+    try {
+        const session = await getServerSession(authOptions);
+        if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+        const body = await request.json();
+        const {
+            client_id,
+            project_id,
             amount,
             description,
             invoice_number,
-            paymentUrl
-        );
+            commissioner_id // Optional: who created it
+        } = body;
 
-        return NextResponse.json({ success: true });
+        // Create invoice in DB with 'pending_approval' status
+        const { data: invoice, error } = await supabaseAdmin
+            .from('invoices')
+            .insert({
+                client_id,
+                project_id,
+                commissioner_id: commissioner_id || (session.user as any).id, // Fallback to current user
+                amount,
+                description,
+                invoice_number,
+                status: 'pending_approval',
+                currency: 'KES'
+            })
+            .select()
+            .single();
+
+        if (error) throw error;
+
+        return NextResponse.json({
+            success: true,
+            data: invoice,
+            message: 'Invoice request submitted for admin approval.'
+        });
 
     } catch (error: any) {
-        console.error('Invoice API Error:', error);
+        console.error('Invoice Creation Error:', error);
         return NextResponse.json(
-            { error: error.message || 'Failed to process invoice' },
+            { error: error.message || 'Failed to create invoice request' },
             { status: 500 }
         );
     }

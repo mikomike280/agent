@@ -1,76 +1,170 @@
-export type CommissionerLevel = 'bronze' | 'silver' | 'gold';
+// Commission Calculation Service
+import { supabaseAdmin } from '@/lib/db';
 
-interface CommissionRate {
-    direct: number;   // Percentage of project value (0.0 to 1.0)
-    override: number; // Percentage of project value for parent (0.0 to 1.0)
+export type CommissionerTier = 'bronze' | 'silver' | 'gold';
+export type CommissionerLevel = CommissionerTier;
+
+export function getLevelBadgeRaw(level: CommissionerTier) {
+    switch (level) {
+        case 'gold':
+            return { label: 'Gold', color: 'bg-yellow-100 text-yellow-800 border border-yellow-200' };
+        case 'silver':
+            return { label: 'Silver', color: 'bg-gray-100 text-gray-800 border border-gray-200' };
+        default:
+            return { label: 'Bronze', color: 'bg-orange-100 text-orange-800 border border-orange-200' };
+    }
 }
 
-export const COMMISSION_RATES: Record<CommissionerLevel, CommissionRate> = {
-    bronze: { direct: 0.25, override: 0.00 },
-    silver: { direct: 0.25, override: 0.02 },
-    gold: { direct: 0.30, override: 0.05 },
-};
-
-export const HARD_CAP_PERCENT = 0.35; // Maximum total commission payout
-
-interface PayoutResult {
-    directAmount: number;
-    overrideAmount: number;
-    totalPayout: number;
-    isCapped: boolean;
-    agencyNet: number;
+export interface CommissionBreakdown {
+    direct: number;
+    parent: number;
+    agency: number;
+    total_to_commissioners: number;
 }
 
 /**
- * Calculates the commission payouts for a completed project.
+ * Calculate commission payouts for a completed project
  * 
- * @param projectValue Total value of the project (e.g., KES 100,000)
- * @param commissionerLevel The level of the direct commissioner
- * @param hasParent Whether the commissioner has a valid parent/referrer
- * @returns Breakdown of payouts
+ * Rules:
+ * - Bronze: 25% direct
+ * - Silver: 27% direct
+ * - Gold: 30% direct
+ * - Parent Override: 5% (from agency share, NOT from direct)
+ * - Hard Cap: 35% total (direct + parent combined)
+ * 
+ * @param projectValue Total project value in KES
+ * @param commissionerTier Tier of the direct commissioner
+ * @param hasParent Whether the commissioner has a parent/referrer
+ * @returns Commission breakdown
  */
 export function calculatePayouts(
     projectValue: number,
-    commissionerLevel: CommissionerLevel,
-    hasParent: boolean
-): PayoutResult {
-    const rates = COMMISSION_RATES[commissionerLevel];
+    commissionerTier: CommissionerTier,
+    hasParent: boolean = false
+): CommissionBreakdown {
+    // Direct commission percentages by tier
+    const directRates: Record<CommissionerTier, number> = {
+        bronze: 0.25, // 25%
+        silver: 0.27, // 27%
+        gold: 0.30,   // 30%
+    };
 
-    // 1. Calculate ideal payouts
-    const rawDirect = projectValue * rates.direct;
-    const rawOverride = hasParent ? (projectValue * rates.override) : 0;
+    const PARENT_OVERRIDE_RATE = 0.05; // 5%
+    const HARD_CAP = 0.35; // 35% maximum total
 
-    let directAmount = rawDirect;
-    let overrideAmount = rawOverride;
+    // Calculate direct commission
+    let direct = projectValue * directRates[commissionerTier];
 
-    // 2. Check Hard Cap
-    const totalProposed = directAmount + overrideAmount;
-    const maxAllowed = projectValue * HARD_CAP_PERCENT;
-    const isCapped = totalProposed > maxAllowed;
+    // Calculate parent override (if applicable)
+    let parent = hasParent ? projectValue * PARENT_OVERRIDE_RATE : 0;
 
-    if (isCapped) {
-        // Option A: Pro-rate both? 
-        // Option B: Reduce Override first?
-        // User Spec: "Total commissions cannot exceed 35%". 
-        // Let's scale them down proportionally to fit the cap.
-        const scale = maxAllowed / totalProposed;
-        directAmount = Math.floor(rawDirect * scale);
-        overrideAmount = Math.floor(rawOverride * scale);
+    // Apply hard cap
+    const totalCommission = direct + parent;
+    if (totalCommission > projectValue * HARD_CAP) {
+        // Scale down proportionally if over cap
+        const cappedTotal = projectValue * HARD_CAP;
+        const ratio = cappedTotal / totalCommission;
+        direct = direct * ratio;
+        parent = parent * ratio;
     }
 
+    // Agency gets the remainder
+    const agency = projectValue - direct - parent;
+
     return {
-        directAmount,
-        overrideAmount,
-        totalPayout: directAmount + overrideAmount,
-        isCapped,
-        agencyNet: projectValue - (directAmount + overrideAmount)
+        direct: Math.round(direct),
+        parent: Math.round(parent),
+        agency: Math.round(agency),
+        total_to_commissioners: Math.round(direct + parent),
     };
 }
 
-export function getLevelBadgeRaw(level: CommissionerLevel) {
-    switch (level) {
-        case 'gold': return { label: 'Gold Partner', color: 'bg-yellow-100 text-yellow-800' };
-        case 'silver': return { label: 'Silver Agent', color: 'bg-gray-100 text-gray-800' };
-        default: return { label: 'Bronze Scout', color: 'bg-orange-50 text-orange-800' };
+/**
+ * Create commission transaction records for a project
+ * 
+ * @param projectId The project ID
+ * @param commissionerId The direct commissioner ID
+ * @param projectValue Total project value
+ */
+export async function createCommissionRecords(
+    projectId: string,
+    commissionerId: string,
+    projectValue: number
+) {
+    try {
+        // Get commissioner details including tier and parent
+        const { data: commissioner, error: commError } = await supabaseAdmin
+            .from('commissioners')
+            .select('tier, user:users(referrer_id)')
+            .eq('id', commissionerId)
+            .single();
+
+        if (commError || !commissioner) {
+            throw new Error('Commissioner not found');
+        }
+
+        const tier = commissioner.tier as CommissionerTier;
+        const referrerId = commissioner.user?.referrer_id;
+
+        // Calculate payouts
+        const breakdown = calculatePayouts(projectValue, tier, !!referrerId);
+
+        // Create transactions array
+        const transactions = [];
+
+        // Direct commission transaction
+        transactions.push({
+            project_id: projectId,
+            commissioner_id: commissionerId,
+            amount: breakdown.direct,
+            commission_type: 'direct',
+            status: 'pending',
+        });
+
+        // Parent override transaction (if applicable)
+        if (referrerId && breakdown.parent > 0) {
+            // Get parent commissioner ID
+            const { data: parentComm } = await supabaseAdmin
+                .from('commissioners')
+                .select('id')
+                .eq('user_id', referrerId)
+                .single();
+
+            if (parentComm) {
+                transactions.push({
+                    project_id: projectId,
+                    commissioner_id: parentComm.id,
+                    amount: breakdown.parent,
+                    commission_type: 'override',
+                    status: 'pending',
+                });
+            }
+        }
+
+        // Insert commission transactions
+        const { data, error } = await supabaseAdmin
+            .from('commission_transactions')
+            .insert(transactions)
+            .select();
+
+        if (error) throw error;
+
+        // Update project commission status
+        await supabaseAdmin
+            .from('projects')
+            .update({ commission_status: 'calculated' })
+            .eq('id', projectId);
+
+        return {
+            success: true,
+            breakdown,
+            transactions: data,
+        };
+    } catch (error: any) {
+        console.error('Error creating commission records:', error);
+        return {
+            success: false,
+            error: error.message,
+        };
     }
 }

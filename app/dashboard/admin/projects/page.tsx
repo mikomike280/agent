@@ -14,6 +14,7 @@ import {
     User
 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
+import Link from 'next/link';
 
 export default function AdminProjectsPage() {
     const { data: session } = useSession();
@@ -112,57 +113,82 @@ export default function AdminProjectsPage() {
                     </div>
                 ) : (
                     filteredProjects.map((project) => (
-                        <Card key={project.id} className="p-6 hover:shadow-xl transition-all duration-300 border-gray-100 group">
-                            <div className="flex justify-between items-start mb-4">
-                                <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase border ${getStatusStyle(project.status)}`}>
-                                    {project.status}
-                                </span>
-                                <button className="p-2 text-gray-400 hover:text-[#5347CE] hover:bg-indigo-50 rounded-lg transition-colors">
-                                    <ExternalLink className="w-4 h-4" />
-                                </button>
-                            </div>
-
-                            <h3 className="text-lg font-bold text-gray-900 group-hover:text-[#5347CE] transition-colors mb-2">
-                                {project.title}
-                            </h3>
-                            <p className="text-gray-500 text-sm line-clamp-2 mb-6">
-                                {project.description}
-                            </p>
-
-                            <div className="space-y-4 pt-4 border-t border-gray-50">
-                                <div className="flex items-center justify-between text-sm">
-                                    <div className="flex items-center gap-2 text-gray-500">
-                                        <Layers className="w-4 h-4" />
-                                        <span>Progress</span>
-                                    </div>
-                                    <span className="font-bold text-gray-900">{project.progress || 0}%</span>
-                                </div>
-                                <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
-                                    <div
-                                        className="bg-indigo-600 h-full rounded-full transition-all duration-1000"
-                                        style={{ width: `${project.progress || 0}%` }}
-                                    ></div>
+                        <Link href={`/dashboard/admin/projects/${project.id}`} key={project.id}>
+                            <Card className="p-6 hover:shadow-xl transition-all duration-300 border-gray-100 group cursor-pointer">
+                                <div className="flex justify-between items-start mb-4">
+                                    <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase border ${getStatusStyle(project.status)}`}>
+                                        {project.status}
+                                    </span>
+                                    <button className="p-2 text-gray-400 hover:text-[#5347CE] hover:bg-indigo-50 rounded-lg transition-colors">
+                                        <ExternalLink className="w-4 h-4" />
+                                    </button>
                                 </div>
 
-                                <div className="flex items-center justify-between pt-2">
-                                    <div className="flex items-center gap-2">
-                                        <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
-                                            <User className="w-4 h-4 text-gray-400" />
+                                <h3 className="text-lg font-bold text-gray-900 group-hover:text-[#5347CE] transition-colors mb-2">
+                                    {project.title}
+                                </h3>
+                                <p className="text-gray-500 text-sm line-clamp-2 mb-6">
+                                    {project.description}
+                                </p>
+
+                                <div className="space-y-4 pt-4 border-t border-gray-50">
+                                    <div className="flex items-center justify-between text-sm">
+                                        <div className="flex items-center gap-2 text-gray-500">
+                                            <Layers className="w-4 h-4" />
+                                            <span>Progress</span>
                                         </div>
-                                        <div className="text-xs">
-                                            <p className="text-gray-400">Assigned Dev</p>
-                                            <p className="font-medium text-gray-700 truncate w-24">
-                                                {project.developer_id ? 'Dev Assigned' : 'Unassigned'}
-                                            </p>
+                                        <span className="font-bold text-gray-900">{project.progress || 0}%</span>
+                                    </div>
+                                    <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
+                                        <div
+                                            className="bg-indigo-600 h-full rounded-full transition-all duration-1000"
+                                            style={{ width: `${project.progress || 0}%` }}
+                                        ></div>
+                                    </div>
+
+                                    <div className="flex items-center justify-between pt-2">
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
+                                                <User className="w-4 h-4 text-gray-400" />
+                                            </div>
+                                            <div className="text-xs">
+                                                <p className="text-gray-400">Assigned Dev</p>
+                                                <p className="font-medium text-gray-700 truncate w-24">
+                                                    {project.developer_id ? 'Dev Assigned' : 'Unassigned'}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <div className="text-right">
+                                            <p className="text-[10px] text-gray-400 uppercase tracking-wider font-bold">Value</p>
+                                            <p className="text-sm font-bold text-gray-900">KES {Number(project.total_value).toLocaleString()}</p>
                                         </div>
                                     </div>
-                                    <div className="text-right">
-                                        <p className="text-[10px] text-gray-400 uppercase tracking-wider font-bold">Value</p>
-                                        <p className="text-sm font-bold text-gray-900">KES {Number(project.total_value).toLocaleString()}</p>
-                                    </div>
+
+                                    {project.status === 'active' && (
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                if (confirm('Are you sure you want to mark this project as COMPLETED? This will release funds to the Developer and Commissions.')) {
+                                                    fetch(`/api/projects/${project.id}/ship`, { method: 'POST' })
+                                                        .then(res => res.json())
+                                                        .then(data => {
+                                                            if (data.success) {
+                                                                alert('Funds Released!');
+                                                                window.location.reload();
+                                                            } else {
+                                                                alert(data.error);
+                                                            }
+                                                        });
+                                                }
+                                            }}
+                                            className="w-full mt-4 py-2 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700 transition"
+                                        >
+                                            Ship & Release Funds
+                                        </button>
+                                    )}
                                 </div>
-                            </div>
-                        </Card>
+                            </Card>
+                        </Link>
                     ))
                 )}
             </div>

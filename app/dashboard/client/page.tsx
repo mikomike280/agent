@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import {
     CheckCircle,
@@ -9,115 +10,247 @@ import {
     ArrowRight,
     MessageSquare,
     FileText,
-    Download
+    Download,
+    Plus,
+    Users,
+    DollarSign,
+    Briefcase,
+    TrendingUp,
+    Search
 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import Link from 'next/link';
 
 export default function ClientDashboard() {
     const { data: session } = useSession();
+    const [stats, setStats] = useState({
+        activeProjects: 0,
+        pendingProposals: 0,
+        totalInvested: 0,
+        teamMembers: 0,
+    });
+    const [recentActivity, setRecentActivity] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchDashboardData = async () => {
+            try {
+                const [projectsRes, paymentsRes] = await Promise.all([
+                    fetch('/api/projects'),
+                    fetch('/api/payments'),
+                ]);
+
+                const projectsData = await projectsRes.json();
+                const paymentsData = await paymentsRes.json();
+
+                if (projectsData.success) {
+                    const projects = projectsData.data || [];
+                    setStats(prev => ({
+                        ...prev,
+                        activeProjects: projects.filter((p: any) => p.status === 'active').length,
+                        pendingProposals: projects.filter((p: any) => p.status === 'pending').length,
+                        teamMembers: projects.reduce((acc: number, p: any) =>
+                            acc + (p.team_members?.length || 0), 0
+                        ),
+                    }));
+                }
+
+                if (paymentsData.success) {
+                    const payments = paymentsData.data || [];
+                    const total = payments
+                        .filter((p: any) => p.status === 'verified' || p.status === 'released')
+                        .reduce((acc: number, p: any) => acc + Number(p.amount), 0);
+                    setStats(prev => ({ ...prev, totalInvested: total }));
+                }
+            } catch (error) {
+                console.error('Error fetching dashboard data:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        if (session) {
+            fetchDashboardData();
+        }
+    }, [session]);
+
+    const getGreeting = () => {
+        const hour = new Date().getHours();
+        if (hour < 12) return 'Good morning';
+        if (hour < 18) return 'Good afternoon';
+        return 'Good evening';
+    };
+
+    const userName = (session?.user as any)?.name?.split(' ')[0] || 'there';
 
     return (
         <div className="space-y-8">
-            {/* Greeting & Quick Status */}
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
-                <div>
-                    <h2 className="text-3xl font-black text-gray-900 tracking-tight">Active Projects</h2>
-                    <p className="text-gray-500 mt-2 text-lg">Track progress, approve milestones, and stay in control.</p>
-                </div>
-                <div className="bg-[#1f7a5a]/10 px-4 py-2 rounded-full flex items-center gap-2 text-[#1f7a5a] font-bold text-sm">
-                    <Shield className="w-4 h-4 fill-current" />
-                    <span>Escrow Protection Active</span>
+            {/* Personalized Welcome Section */}
+            <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-3xl p-8 text-white shadow-2xl shadow-indigo-200/50">
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                    <div>
+                        <h1 className="text-4xl font-black mb-2">
+                            {getGreeting()}, {userName}! 👋
+                        </h1>
+                        <p className="text-indigo-100 text-lg">
+                            Ready to bring your next idea to life? Let's make it happen.
+                        </p>
+                    </div>
+                    <Link
+                        href="/dashboard/client/new-project"
+                        className="px-8 py-4 bg-white text-indigo-600 rounded-xl font-bold hover:shadow-xl transition-all flex items-center gap-2 whitespace-nowrap"
+                    >
+                        <Plus className="w-5 h-5" />
+                        Start New Project
+                    </Link>
                 </div>
             </div>
 
-            {/* Main Project Card - "Premium & Calm" */}
-            <Card className="border-none shadow-2xl shadow-indigo-100/40 bg-white overflow-hidden rounded-3xl">
-                {/* Header Strip */}
-                <div className="bg-gray-900 p-8 text-white flex justify-between items-center">
-                    <div>
-                        <div className="flex items-center gap-3 mb-2">
-                            <span className="px-3 py-1 bg-green-500/20 text-green-400 rounded-full text-[10px] font-black uppercase tracking-widest border border-green-500/30">
-                                In Progress
-                            </span>
-                            <span className="text-gray-400 text-sm font-medium">ID: #PROJ-8292</span>
-                        </div>
-                        <h3 className="text-2xl font-bold">Green School Portal Revamp</h3>
+            {/* Project Overview Stats */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <Card className="p-6 bg-[var(--bg-card)] border-[var(--bg-input)] shadow-sm hover:shadow-lg transition-shadow">
+                    <div className="w-12 h-12 bg-indigo-500/10 rounded-2xl flex items-center justify-center mb-4">
+                        <Briefcase className="w-6 h-6 text-indigo-600" />
                     </div>
-                    <div className="text-right hidden md:block">
-                        <p className="text-xs text-gray-400 uppercase tracking-widest font-bold mb-1">Timeline</p>
-                        <p className="text-xl font-bold font-mono">14 Days Left</p>
+                    <p className="text-[var(--text-secondary)] text-sm font-medium mb-1">Active Projects</p>
+                    <h3 className="text-3xl font-bold text-[var(--text-primary)]">{stats.activeProjects}</h3>
+                </Card>
+
+                <Card className="p-6 bg-[var(--bg-card)] border-[var(--bg-input)] shadow-sm hover:shadow-lg transition-shadow">
+                    <div className="w-12 h-12 bg-orange-500/10 rounded-2xl flex items-center justify-center mb-4">
+                        <Clock className="w-6 h-6 text-orange-600" />
                     </div>
-                </div>
+                    <p className="text-[var(--text-secondary)] text-sm font-medium mb-1">Pending Proposals</p>
+                    <h3 className="text-3xl font-bold text-[var(--text-primary)]">{stats.pendingProposals}</h3>
+                </Card>
 
-                <div className="p-8">
-                    {/* Progress & Confidence Meter */}
-                    <div className="mb-10">
-                        <div className="flex justify-between items-end mb-4">
-                            <div>
-                                <p className="text-xs font-black text-gray-400 uppercase tracking-widest mb-1">Current Phase</p>
-                                <h4 className="text-xl font-bold text-indigo-600">Front-End Development</h4>
-                            </div>
-                            <div className="text-right">
-                                <p className="text-4xl font-black text-gray-900">65%</p>
-                                <p className="text-xs text-gray-400 font-bold uppercase tracking-widest">Completion Confidence</p>
-                            </div>
-                        </div>
-
-                        {/* Custom Progress Bar */}
-                        <div className="h-4 bg-gray-100 rounded-full overflow-hidden flex">
-                            <div className="w-[30%] bg-green-500 h-full"></div>
-                            <div className="w-[35%] bg-green-500 h-full border-l border-white/20"></div>
-                            <div className="w-[35%] bg-gray-100 h-full"></div>
-                        </div>
-                        <div className="flex justify-between mt-2 text-xs font-bold text-gray-400 uppercase tracking-wider">
-                            <span>Design</span>
-                            <span className="text-indigo-600">Build</span>
-                            <span>Testing</span>
-                            <span>Launch</span>
-                        </div>
+                <Card className="p-6 bg-[var(--bg-card)] border-[var(--bg-input)] shadow-sm hover:shadow-lg transition-shadow">
+                    <div className="w-12 h-12 bg-green-500/10 rounded-2xl flex items-center justify-center mb-4">
+                        <DollarSign className="w-6 h-6 text-green-600" />
                     </div>
+                    <p className="text-[var(--text-secondary)] text-sm font-medium mb-1">Total Invested</p>
+                    <h3 className="text-2xl font-bold text-[var(--text-primary)]">
+                        KES {stats.totalInvested.toLocaleString()}
+                    </h3>
+                </Card>
 
-                    {/* Action Grid */}
-                    <div className="grid md:grid-cols-3 gap-6">
-                        <div className="p-6 bg-gray-50 rounded-2xl border border-gray-100">
-                            <div className="w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center text-indigo-600 mb-4">
-                                <MessageSquare className="w-5 h-5" />
-                            </div>
-                            <h5 className="font-bold text-gray-900 mb-1">Commissioner Update</h5>
-                            <p className="text-sm text-gray-500 mb-4 leading-relaxed">"The landing page designs are ready. Please review the attached PDF."</p>
-                            <Link href="/dashboard/messages" className="text-xs font-black text-indigo-600 uppercase tracking-widest hover:underline">
-                                Reply to Message
-                            </Link>
-                        </div>
-
-                        <div className="p-6 bg-gray-50 rounded-2xl border border-gray-100">
-                            <div className="w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center text-orange-500 mb-4">
-                                <FileText className="w-5 h-5" />
-                            </div>
-                            <h5 className="font-bold text-gray-900 mb-1">Pending Approval</h5>
-                            <p className="text-sm text-gray-500 mb-4 leading-relaxed">Milestone 2: Database Schema requires your sign-off to proceed.</p>
-                            <button className="text-xs font-black text-orange-600 uppercase tracking-widest hover:underline">
-                                Review & Approve
-                            </button>
-                        </div>
-
-                        <div className="p-6 bg-gray-50 rounded-2xl border border-gray-100">
-                            <div className="w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center text-green-600 mb-4">
-                                <Download className="w-5 h-5" />
-                            </div>
-                            <h5 className="font-bold text-gray-900 mb-1">Project Documents</h5>
-                            <p className="text-sm text-gray-500 mb-4 leading-relaxed">Access all contracts, invoices, and design files in one place.</p>
-                            <Link href="/dashboard/client/files" className="text-xs font-black text-green-600 uppercase tracking-widest hover:underline">
-                                Open File Vault
-                            </Link>
-                        </div>
+                <Card className="p-6 bg-[var(--bg-card)] border-[var(--bg-input)] shadow-sm hover:shadow-lg transition-shadow">
+                    <div className="w-12 h-12 bg-purple-500/10 rounded-2xl flex items-center justify-center mb-4">
+                        <Users className="w-6 h-6 text-purple-600" />
                     </div>
+                    <p className="text-[var(--text-secondary)] text-sm font-medium mb-1">Team Members</p>
+                    <h3 className="text-3xl font-bold text-[var(--text-primary)]">{stats.teamMembers}</h3>
+                </Card>
+            </div>
+
+            {/* Quick Actions */}
+            <Card className="p-8 bg-[var(--bg-card)] border-[var(--bg-input)]">
+                <h2 className="text-xl font-bold text-[var(--text-primary)] mb-6">Quick Actions</h2>
+                <div className="grid md:grid-cols-3 gap-4">
+                    <Link
+                        href="/dashboard/client/new-project"
+                        className="p-6 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl text-white hover:shadow-xl transition-all group"
+                    >
+                        <Plus className="w-8 h-8 mb-4 group-hover:scale-110 transition-transform" />
+                        <h3 className="font-bold text-lg mb-2">Start New Project</h3>
+                        <p className="text-indigo-100 text-sm">Create a project and hire a commissioner</p>
+                    </Link>
+
+                    <Link
+                        href="/dashboard/client/discovery"
+                        className="p-6 bg-gradient-to-br from-teal-500 to-cyan-600 rounded-2xl text-white hover:shadow-xl transition-all group"
+                    >
+                        <Search className="w-8 h-8 mb-4 group-hover:scale-110 transition-transform" />
+                        <h3 className="font-bold text-lg mb-2">Browse Commissioners</h3>
+                        <p className="text-teal-100 text-sm">Find the perfect lead for your project</p>
+                    </Link>
+
+                    <Link
+                        href="/dashboard/client/messages"
+                        className="p-6 bg-gradient-to-br from-orange-500 to-pink-600 rounded-2xl text-white hover:shadow-xl transition-all group"
+                    >
+                        <MessageSquare className="w-8 h-8 mb-4 group-hover:scale-110 transition-transform" />
+                        <h3 className="font-bold text-lg mb-2">View Messages</h3>
+                        <p className="text-orange-100 text-sm">Stay in touch with your team</p>
+                    </Link>
                 </div>
             </Card>
 
+            {/* Recent Activity Feed */}
+            <Card className="p-8 bg-[var(--bg-card)] border-[var(--bg-input)]">
+                <div className="flex justify-between items-center mb-6">
+                    <h2 className="text-xl font-bold text-[var(--text-primary)]">Recent Activity</h2>
+                    <Link href="/dashboard/client/projects" className="text-sm text-[var(--primary)] font-bold hover:underline">
+                        View All Projects →
+                    </Link>
+                </div>
+
+                {loading ? (
+                    <div className="space-y-4">
+                        {[1, 2, 3].map(i => (
+                            <div key={i} className="h-16 bg-[var(--bg-input)] animate-pulse rounded-lg"></div>
+                        ))}
+                    </div>
+                ) : stats.activeProjects === 0 && stats.pendingProposals === 0 ? (
+                    <div className="text-center py-12">
+                        <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <Briefcase className="w-10 h-10 text-gray-400" />
+                        </div>
+                        <h3 className="text-xl font-bold text-[var(--text-primary)] mb-2">No Active Projects</h3>
+                        <p className="text-[var(--text-secondary)] mb-6">
+                            Start your first project to see activity here
+                        </p>
+                        <Link
+                            href="/dashboard/client/new-project"
+                            className="inline-flex items-center gap-2 px-6 py-3 bg-[var(--primary)] text-white rounded-xl font-bold hover:opacity-90 transition-all"
+                        >
+                            <Plus className="w-5 h-5" />
+                            Create Your First Project
+                        </Link>
+                    </div>
+                ) : (
+                    <div className="space-y-4">
+                        <div className="flex items-start gap-4 p-4 bg-[var(--bg-input)]/30 rounded-lg">
+                            <div className="w-10 h-10 bg-green-500/10 rounded-full flex items-center justify-center flex-shrink-0">
+                                <CheckCircle className="w-5 h-5 text-green-600" />
+                            </div>
+                            <div className="flex-1">
+                                <p className="font-bold text-[var(--text-primary)]">Project milestone completed</p>
+                                <p className="text-sm text-[var(--text-secondary)] mt-1">
+                                    "Frontend Development" was approved • 2 hours ago
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="flex items-start gap-4 p-4 bg-[var(--bg-input)]/30 rounded-lg">
+                            <div className="w-10 h-10 bg-indigo-500/10 rounded-full flex items-center justify-center flex-shrink-0">
+                                <MessageSquare className="w-5 h-5 text-indigo-600" />
+                            </div>
+                            <div className="flex-1">
+                                <p className="font-bold text-[var(--text-primary)]">New message from commissioner</p>
+                                <p className="text-sm text-[var(--text-secondary)] mt-1">
+                                    "The landing page designs are ready..." • 5 hours ago
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="flex items-start gap-4 p-4 bg-[var(--bg-input)]/30 rounded-lg">
+                            <div className="w-10 h-10 bg-orange-500/10 rounded-full flex items-center justify-center flex-shrink-0">
+                                <AlertCircle className="w-5 h-5 text-orange-600" />
+                            </div>
+                            <div className="flex-1">
+                                <p className="font-bold text-[var(--text-primary)]">Pending approval required</p>
+                                <p className="text-sm text-[var(--text-secondary)] mt-1">
+                                    "Database Schema" milestone needs review • 1 day ago
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </Card>
+
             {/* Trust Footer */}
-            <div className="flex justify-center gap-8 text-gray-400 text-xs font-medium uppercase tracking-widest pt-8 border-t border-gray-100">
+            <div className="flex justify-center gap-8 text-[var(--text-secondary)] text-xs font-medium uppercase tracking-widest pt-8 border-t border-[var(--bg-input)]">
                 <span className="flex items-center gap-2">
                     <CheckCircle className="w-4 h-4 text-green-500" />
                     110% Refund Guarantee

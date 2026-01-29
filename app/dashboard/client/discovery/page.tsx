@@ -13,6 +13,7 @@ import {
     ArrowUpRight
 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
+import { GoldBadge } from '@/components/ui/GoldBadge';
 import Link from 'next/link';
 
 export default function DiscoveryPage() {
@@ -73,8 +74,8 @@ export default function DiscoveryPage() {
                             key={cat}
                             onClick={() => setSelectedCategory(cat)}
                             className={`px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition-all ${selectedCategory === cat || (cat === 'All' && !selectedCategory)
-                                    ? 'bg-gray-900 text-white shadow-lg shadow-gray-200 scale-105'
-                                    : 'bg-gray-50 text-gray-500 hover:bg-gray-100'
+                                ? 'bg-gray-900 text-white shadow-lg shadow-gray-200 scale-105'
+                                : 'bg-gray-50 text-gray-500 hover:bg-gray-100'
                                 }`}
                         >
                             {cat}
@@ -115,7 +116,10 @@ export default function DiscoveryPage() {
                                                 </div>
                                             )}
                                             <div>
-                                                <h3 className="font-bold text-lg text-gray-900 leading-tight group-hover:text-indigo-600 transition-colors">{comm.name}</h3>
+                                                <h3 className="font-bold text-lg text-gray-900 leading-tight group-hover:text-indigo-600 transition-colors flex items-center gap-2">
+                                                    {comm.name}
+                                                    <GoldBadge tier={comm.tier} size="sm" />
+                                                </h3>
                                                 <div className="flex items-center gap-1 text-xs font-semibold text-yellow-500 mt-1">
                                                     <Star className="w-3 h-3 fill-current" />
                                                     <span>{comm.rating.toFixed(1)}</span>

@@ -1,156 +1,169 @@
-'use client';
-
-import { useState, useEffect } from 'react';
-import { useSession } from 'next-auth/react';
-import {
-    Briefcase,
-    CheckCircle,
-    Clock,
-    AlertCircle,
-    MessageSquare,
-    FileText,
-    ArrowRight
-} from 'lucide-react';
-import { Card } from '@/components/ui/card';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
+import { db } from '@/lib/db';
+import PayDepositButton from '@/components/PayDepositButton';
+import { ShieldCheck, Clock, CheckCircle, AlertCircle, FileText, ExternalLink } from 'lucide-react';
+import { redirect } from 'next/navigation';
 import Link from 'next/link';
 
-export default function ClientProjectsPage() {
-    const { data: session } = useSession();
-    const [projects, setProjects] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
+export default async function ClientProjectsPage() {
+    const session = await getServerSession(authOptions);
 
-    useEffect(() => {
-        const fetchProjects = async () => {
-            try {
-                const response = await fetch('/api/projects');
-                const result = await response.json();
-                if (result.success) {
-                    setProjects(result.data);
-                }
-            } catch (error) {
-                console.error('Error fetching projects:', error);
-            } finally {
-                setLoading(false);
-            }
-        };
+    if (!session) {
+        redirect('/login');
+    }
 
-        if (session) {
-            fetchProjects();
-        }
-    }, [session]);
+    const user = session.user as any;
+    const projects = await db.getProjectsByClient(user.id);
 
     return (
-        <div className="space-y-8">
-            <div>
-                <h1 className="text-3xl font-bold text-gray-900">My Projects</h1>
-                <p className="text-gray-500 mt-2">Track progress and manage deliverables for all your active projects.</p>
+        <div className="p-6 max-w-7xl mx-auto space-y-8">
+            {/* Header & Guarantee Badge */}
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                    <h1 className="text-3xl font-bold text-gray-900">My Projects</h1>
+                    <p className="text-gray-500 mt-1">Track progress, payments, and milestones</p>
+                </div>
+
+                {/* 110% Guarantee Badge */}
+                <div className="flex items-center gap-3 bg-green-50 border border-green-200 p-4 rounded-xl shadow-sm">
+                    <div className="bg-green-100 p-2 rounded-full">
+                        <ShieldCheck className="w-8 h-8 text-green-600" />
+                    </div>
+                    <div>
+                        <h3 className="font-bold text-green-800">110% Money-Back Guarantee</h3>
+                        <p className="text-sm text-green-700">Active Protection. On time, or we pay you.</p>
+                    </div>
+                </div>
             </div>
 
-            <div className="space-y-6">
-                {loading ? (
-                    Array(3).fill(0).map((_, i) => (
-                        <Card key={i} className="p-8 animate-pulse">
-                            <div className="flex gap-6">
-                                <div className="w-16 h-16 bg-gray-100 rounded-2xl"></div>
-                                <div className="flex-1 space-y-4">
-                                    <div className="h-6 bg-gray-100 rounded w-1/3"></div>
-                                    <div className="h-4 bg-gray-100 rounded w-full"></div>
-                                    <div className="h-4 bg-gray-100 rounded w-2/3"></div>
-                                </div>
-                            </div>
-                        </Card>
-                    ))
-                ) : projects.length === 0 ? (
-                    <Card className="p-12 text-center bg-white border-dashed border-2 border-gray-100">
-                        <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-6">
-                            <Briefcase className="w-10 h-10 text-gray-300" />
-                        </div>
-                        <h3 className="text-xl font-bold text-gray-900 mb-2">No active projects</h3>
-                        <p className="text-gray-500 max-w-sm mx-auto mb-8">
-                            You don't have any projects in progress. Contact your account manager to start a new project.
-                        </p>
-                        <button className="px-6 py-3 bg-[#1f7a5a] text-white rounded-xl font-bold hover:bg-[#176549] transition-all">
-                            Start New Project
-                        </button>
-                    </Card>
-                ) : (
-                    projects.map((project) => (
-                        <Card key={project.id} className="p-8 hover:shadow-xl transition-all duration-500 border-gray-100 bg-white group overflow-hidden relative">
-                            {/* Decorative Background Element */}
-                            <div className="absolute top-0 right-0 w-32 h-32 bg-gray-50 -mr-16 -mt-16 rounded-full group-hover:scale-110 transition-transform duration-700"></div>
-
-                            <div className="relative flex flex-col lg:flex-row gap-8">
-                                <div className="lg:w-2/3 space-y-6">
-                                    <div className="flex items-start justify-between">
-                                        <div>
-                                            <div className="flex items-center gap-3 mb-2">
-                                                <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${project.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
-                                                    }`}>
-                                                    {project.status}
-                                                </span>
-                                                <span className="text-sm text-gray-400 font-medium">#{project.id.split('-')[0]}</span>
-                                            </div>
-                                            <h2 className="text-2xl font-bold text-gray-900 group-hover:text-[#1f7a5a] transition-colors">
-                                                {project.title}
-                                            </h2>
-                                        </div>
+            {projects.length === 0 ? (
+                <div className="text-center py-16 bg-white rounded-2xl shadow-sm border border-gray-100">
+                    <div className="bg-gray-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <FileText className="w-8 h-8 text-gray-400" />
+                    </div>
+                    <h3 className="text-xl font-semibold text-gray-900">No projects yet</h3>
+                    <p className="text-gray-500 mt-2 max-w-md mx-auto">
+                        Ready to start your next big idea? Contact a commissioner to get scoped.
+                    </p>
+                </div>
+            ) : (
+                <div className="grid gap-8">
+                    {projects.map((project: any) => (
+                        <div key={project.id} className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+                            {/* Project Header */}
+                            <div className="p-6 border-b border-gray-100 flex flex-col md:flex-row justify-between gap-4">
+                                <div>
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <h2 className="text-xl font-bold text-gray-900">{project.title}</h2>
+                                        <span className={`px-3 py-1 rounded-full text-xs font-semibold ${project.status === 'completed' ? 'bg-green-100 text-green-700' :
+                                                project.status === 'active' ? 'bg-blue-100 text-blue-700' :
+                                                    project.status === 'deposit_pending' ? 'bg-yellow-100 text-yellow-700' :
+                                                        'bg-gray-100 text-gray-700'
+                                            }`}>
+                                            {project.status.replace('_', ' ').toUpperCase()}
+                                        </span>
                                     </div>
-
-                                    <p className="text-gray-600 leading-relaxed">
-                                        {project.description}
+                                    <p className="text-gray-500 line-clamp-2">{project.description}</p>
+                                </div>
+                                <div className="text-right">
+                                    <p className="text-sm text-gray-500">Total Value</p>
+                                    <p className="text-2xl font-bold text-gray-900">
+                                        {project.currency} {Number(project.total_value).toLocaleString()}
                                     </p>
+                                </div>
+                            </div>
 
-                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                        <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100">
-                                            <p className="text-[10px] text-gray-400 font-bold uppercase mb-1">Timeline</p>
-                                            <p className="font-bold text-gray-900">4-6 Weeks</p>
+                            {/* Action Area */}
+                            <div className="p-6 bg-gray-50">
+                                {project.status === 'deposit_pending' && (
+                                    <div className="flex flex-col md:flex-row items-center justify-between gap-4 bg-yellow-50 border border-yellow-200 p-4 rounded-lg">
+                                        <div className="flex items-center gap-3">
+                                            <AlertCircle className="w-6 h-6 text-yellow-600" />
+                                            <div>
+                                                <h4 className="font-semibold text-yellow-900">Deposit Required</h4>
+                                                <p className="text-sm text-yellow-800">Pay the 43% kickoff deposit to start development.</p>
+                                            </div>
                                         </div>
-                                        <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100">
-                                            <p className="text-[10px] text-gray-400 font-bold uppercase mb-1">Status</p>
-                                            <p className="font-bold text-gray-900 capitalize">{project.status}</p>
+                                        <PayDepositButton
+                                            projectId={project.id}
+                                            amount={project.total_value * 0.43}
+                                            email={user.email}
+                                        />
+                                    </div>
+                                )}
+
+                                {project.status === 'active' && (
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-full bg-gray-200 rounded-full h-2.5">
+                                            <div className="bg-blue-600 h-2.5 rounded-full" style={{ width: '45%' }}></div>
                                         </div>
-                                        <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100">
-                                            <p className="text-[10px] text-gray-400 font-bold uppercase mb-1">Next Milestone</p>
-                                            <p className="font-bold text-gray-900">Beta Launch</p>
-                                        </div>
-                                        <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100">
-                                            <p className="text-[10px] text-gray-400 font-bold uppercase mb-1">Current Task</p>
-                                            <p className="font-bold text-gray-900">API Design</p>
-                                        </div>
+                                        <span className="text-sm font-medium text-gray-600 whitespace-nowrap">Development In Progress</span>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Milestones & Feed */}
+                            <div className="p-6 grid md:grid-cols-2 gap-8">
+                                {/* Timeline */}
+                                <div>
+                                    <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                                        <Clock className="w-5 h-5 text-gray-500" />
+                                        Project Timeline
+                                    </h3>
+                                    <div className="space-y-6 border-l-2 border-gray-100 ml-3 pl-6 relative">
+                                        {project.milestones && project.milestones.length > 0 ? (
+                                            project.milestones.map((milestone: any, index: number) => (
+                                                <div key={milestone.id} className="relative">
+                                                    <div className={`absolute -left-[29px] w-4 h-4 rounded-full border-2 ${milestone.status === 'approved' ? 'bg-green-500 border-green-500' :
+                                                            milestone.status === 'in_progress' ? 'bg-blue-500 border-white ring-2 ring-blue-100' :
+                                                                'bg-gray-200 border-white'
+                                                        }`}></div>
+                                                    <div className="flex justify-between items-start">
+                                                        <div>
+                                                            <h4 className={`font-medium ${milestone.status === 'approved' ? 'text-gray-900' : 'text-gray-600'}`}>
+                                                                {milestone.title}
+                                                            </h4>
+                                                            <p className="text-sm text-gray-500">{milestone.description}</p>
+                                                        </div>
+                                                        <span className={`text-xs px-2 py-1 rounded ${milestone.status === 'approved' ? 'bg-green-100 text-green-700' :
+                                                                milestone.status === 'in_progress' ? 'bg-blue-100 text-blue-700' :
+                                                                    'bg-gray-100 text-gray-600'
+                                                            }`}>
+                                                            {milestone.status}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            ))
+                                        ) : (
+                                            <p className="text-sm text-gray-500 italic">No milestones defined yet.</p>
+                                        )}
                                     </div>
                                 </div>
 
-                                <div className="lg:w-1/3 flex flex-col justify-between border-t lg:border-t-0 lg:border-l border-gray-100 pt-8 lg:pt-0 lg:pl-8">
-                                    <div className="space-y-6">
-                                        <div className="flex items-center justify-between mb-2">
-                                            <span className="text-sm font-bold text-gray-900 uppercase tracking-wide">Project Velocity</span>
-                                            <span className="text-xl font-black text-[#1f7a5a]">{project.progress || 0}%</span>
-                                        </div>
-                                        <div className="w-full bg-gray-100 rounded-full h-3 overflow-hidden">
-                                            <div
-                                                className="bg-gradient-to-r from-[#1f7a5a] to-[#2ecc71] h-full rounded-full transition-all duration-1000 shadow-[0_0_10px_rgba(31,122,90,0.3)]"
-                                                style={{ width: `${project.progress || 0}%` }}
-                                            ></div>
-                                        </div>
+                                {/* Updates / Feed */}
+                                <div>
+                                    <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                                        <CheckCircle className="w-5 h-5 text-gray-500" />
+                                        Recent Updates
+                                    </h3>
+                                    <div className="bg-gray-50 rounded-xl p-4 h-64 overflow-y-auto">
+                                        <p className="text-sm text-gray-500 text-center py-4">
+                                            No recent updates from the developer.
+                                        </p>
+                                        {/* TODO: Connect to developer update feed */}
                                     </div>
-
-                                    <div className="space-y-3 mt-8">
-                                        <button className="w-full py-4 bg-gray-900 text-white rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-gray-800 transition-all hover:-translate-y-1 shadow-lg shadow-gray-200">
-                                            <MessageSquare className="w-5 h-5" />
-                                            Message Developer
-                                        </button>
-                                        <button className="w-full py-4 bg-white border-2 border-gray-100 text-gray-600 rounded-2xl font-bold flex items-center justify-center gap-2 hover:border-[#1f7a5a] hover:text-[#1f7a5a] transition-all">
-                                            <FileText className="w-5 h-5" />
-                                            View Artifacts
-                                            <ArrowRight className="w-4 h-4" />
+                                    <div className="mt-4 flex justify-end">
+                                        <button className="text-sm text-[#1f7a5a] font-medium hover:underline flex items-center gap-1">
+                                            View all files <ExternalLink className="w-3 h-3" />
                                         </button>
                                     </div>
                                 </div>
                             </div>
-                        </Card>
-                    ))
-                )}
-            </div>
+                        </div>
+                    ))}
+                </div>
+            )}
         </div>
     );
 }

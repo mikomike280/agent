@@ -4,12 +4,10 @@ import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import {
     Users,
-    Link2,
     Share2,
     CheckCircle,
     Clock,
     UserPlus,
-    Copy,
     Search,
     ChevronRight,
     Target,
@@ -102,6 +100,47 @@ export default function CommissionerLeadsPage() {
         alert('Intake link copied to clipboard!');
     };
 
+    const handleLogContact = async (leadId: string) => {
+        try {
+            const res = await fetch('/api/leads/contact', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ leadId })
+            });
+            if (res.ok) {
+                alert('Contact Logged! This lead is now secured.');
+                fetchLeads();
+            } else {
+                alert('Failed to log contact');
+            }
+        } catch (error) {
+            console.error(error);
+        }
+    };
+
+    const handleClaimLead = async (leadId: string) => {
+        if (!confirm('Are you sure you want to claim this lead? You have a limited capacity of 3 active leads.')) return;
+
+        try {
+            const res = await fetch('/api/leads/claim', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ leadId })
+            });
+            const json = await res.json();
+
+            if (res.ok) {
+                alert(json.message || 'Lead claimed successfully!');
+                fetchLeads();
+            } else {
+                alert(json.message || 'Failed to claim lead');
+            }
+        } catch (error) {
+            console.error(error);
+            alert('An error occurred while claiming the lead');
+        }
+    };
+
     const filteredLeads = leads.filter(lead =>
         lead.client_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         lead.client_email?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -170,6 +209,7 @@ export default function CommissionerLeadsPage() {
                                 <th className="px-8 py-5 text-[11px] font-black text-[var(--text-secondary)] uppercase tracking-[0.2em]">Contact</th>
                                 <th className="px-8 py-5 text-[11px] font-black text-[var(--text-secondary)] uppercase tracking-[0.2em]">Status</th>
                                 <th className="px-8 py-5 text-[11px] font-black text-[var(--text-secondary)] uppercase tracking-[0.2em]">Budget</th>
+                                <th className="px-8 py-5 text-[11px] font-black text-[var(--text-secondary)] uppercase tracking-[0.2em]">Phone</th>
                                 <th className="px-8 py-5 text-[11px] font-black text-[var(--text-secondary)] uppercase tracking-[0.2em]">Added By</th>
                                 <th className="px-8 py-5 text-[11px] font-black text-[var(--text-secondary)] uppercase tracking-[0.2em] text-right">Action</th>
                             </tr>
@@ -191,43 +231,76 @@ export default function CommissionerLeadsPage() {
                                     </td>
                                 </tr>
                             ) : (
-                                filteredLeads.map((lead) => (
-                                    <tr key={lead.id} className="group hover:bg-[var(--bg-app)] transition-all duration-300">
-                                        <td className="px-8 py-6">
-                                            <div className="flex items-center gap-4">
-                                                <div className="w-12 h-12 rounded-2xl bg-[var(--primary)]/10 flex items-center justify-center font-bold text-[var(--primary)] transition-transform group-hover:scale-110">
-                                                    {lead.client_name?.[0]?.toUpperCase()}
+                                filteredLeads.map((lead) => {
+                                    const isMyLead = lead.claimed_by && (session?.user as any)?.commissioner_id === lead.claimed_by;
+                                    const isClaimable = !lead.claimed_by && lead.status === 'created';
+
+                                    return (
+                                        <tr key={lead.id} className="group hover:bg-[var(--bg-app)] transition-all duration-300">
+                                            <td className="px-8 py-6">
+                                                <div className="flex items-center gap-4">
+                                                    <div className="w-12 h-12 rounded-2xl bg-[var(--primary)]/10 flex items-center justify-center font-bold text-[var(--primary)] transition-transform group-hover:scale-110">
+                                                        {lead.client_name?.[0]?.toUpperCase()}
+                                                    </div>
+                                                    <div>
+                                                        <p className="font-bold text-[var(--text-primary)] group-hover:text-[var(--primary)] transition-colors">
+                                                            {isMyLead ? lead.client_name : (lead.client_name.split(' ')[0] + '...')}
+                                                        </p>
+                                                        <p className="text-xs text-[var(--text-secondary)] max-w-xs truncate">{lead.project_summary || 'No summary'}</p>
+                                                    </div>
                                                 </div>
-                                                <div>
-                                                    <p className="font-bold text-[var(--text-primary)] group-hover:text-[var(--primary)] transition-colors">{lead.client_name}</p>
-                                                    <p className="text-xs text-[var(--text-secondary)]">{lead.project_summary || 'No summary'}</p>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td className="px-8 py-6">
-                                            <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-tight ${lead.status === 'converted' ? 'bg-green-500/10 text-green-500' :
-                                                lead.status === 'contacted' ? 'bg-blue-500/10 text-blue-500' :
-                                                    'bg-yellow-500/10 text-yellow-500'
-                                                }`}>
-                                                <div className={`w-1.5 h-1.5 rounded-full ${lead.status === 'converted' ? 'bg-green-500' : 'bg-yellow-500'}`} />
-                                                {lead.status}
-                                            </span>
-                                        </td>
-                                        <td className="px-8 py-6">
-                                            <p className="font-bold text-[var(--text-primary)]">
-                                                {lead.budget ? `KES ${Number(lead.budget).toLocaleString()}` : 'N/A'}
-                                            </p>
-                                        </td>
-                                        <td className="px-8 py-6 text-sm text-[var(--text-secondary)]">
-                                            {lead.commissioner?.user?.name || 'Unknown'}
-                                        </td>
-                                        <td className="px-8 py-6 text-right">
-                                            <button className="p-2 border border-[var(--bg-input)] rounded-xl hover:bg-[var(--primary)] hover:text-white transition-all duration-300 text-[var(--text-secondary)]">
-                                                <ChevronRight className="w-5 h-5" />
-                                            </button>
-                                        </td>
-                                    </tr>
-                                ))
+                                            </td>
+                                            <td className="px-8 py-6">
+                                                <p className="font-bold text-[var(--text-primary)]">
+                                                    {lead.budget ? `KES ${Number(lead.budget).toLocaleString()}` : 'N/A'}
+                                                </p>
+                                            </td>
+                                            <td className="px-8 py-6">
+                                                <p className="text-sm text-[var(--text-secondary)]">
+                                                    {lead.client_phone || 'Not provided'}
+                                                </p>
+                                            </td>
+                                            <td className="px-8 py-6">
+                                                <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-tight ${lead.status === 'converted' ? 'bg-green-500/10 text-green-500' :
+                                                    lead.status === 'contacted' ? 'bg-blue-500/10 text-blue-500' :
+                                                        lead.claimed_by ? 'bg-purple-500/10 text-purple-500' :
+                                                            'bg-green-500/10 text-green-600'
+                                                    }`}>
+                                                    <div className={`w-1.5 h-1.5 rounded-full ${lead.status === 'converted' ? 'bg-green-500' :
+                                                        lead.claimed_by ? 'bg-purple-500' : 'bg-green-500'
+                                                        }`} />
+                                                    {lead.claimed_by ? (isMyLead ? (lead.status === 'claimed' ? 'Claimed - Contact Pending' : 'Contacted') : 'Claimed') : 'Open'}
+                                                </span>
+                                            </td>
+                                            <td className="px-8 py-6 text-sm text-[var(--text-secondary)]">
+                                                {lead.commissioner?.user?.name || 'Pool'}
+                                            </td>
+                                            <td className="px-8 py-6 text-right">
+                                                {isClaimable ? (
+                                                    <button
+                                                        onClick={() => handleClaimLead(lead.id)}
+                                                        className="px-4 py-2 bg-indigo-600 text-white rounded-xl text-xs font-bold hover:bg-indigo-700 transition"
+                                                    >
+                                                        Claim Lead
+                                                    </button>
+                                                ) : isMyLead && lead.status === 'claimed' ? (
+                                                    <button
+                                                        onClick={() => handleLogContact(lead.id)}
+                                                        className="px-4 py-2 border border-blue-200 bg-blue-50 text-blue-600 rounded-xl text-xs font-bold hover:bg-blue-100 transition"
+                                                    >
+                                                        Log Contact
+                                                    </button>
+                                                ) : isMyLead ? (
+                                                    <button className="px-4 py-2 border border-gray-200 text-gray-400 rounded-xl text-xs font-bold cursor-default">
+                                                        Secured
+                                                    </button>
+                                                ) : (
+                                                    <span className="text-xs text-gray-400 italic">Unavailable</span>
+                                                )}
+                                            </td>
+                                        </tr>
+                                    );
+                                })
                             )}
                         </tbody>
                     </table>

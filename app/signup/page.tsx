@@ -2,7 +2,7 @@
 'use client';
 
 import { signIn } from 'next-auth/react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Mail, Lock, User, Briefcase } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -14,10 +14,20 @@ export default function SignupPage() {
         email: '',
         password: '',
         role: 'client', // Default to client
-        phone: ''
+        phone: '',
+        referralCode: ''
     });
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState('');
+
+    useEffect(() => {
+        // Check for referral cookie (set by /join page)
+        const refCookie = document.cookie.split('; ').find(row => row.startsWith('agency_referral_code='));
+        if (refCookie) {
+            const code = refCookie.split('=')[1];
+            setFormData(prev => ({ ...prev, referralCode: code }));
+        }
+    }, []);
 
     const handleSignup = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -79,10 +89,10 @@ export default function SignupPage() {
 
                     {message && (
                         <div className={`mb-4 p-3 rounded-lg ${message.includes('pending')
-                                ? 'bg-yellow-100 text-yellow-800'
-                                : message.includes('success')
-                                    ? 'bg-green-100 text-green-800'
-                                    : 'bg-red-100 text-red-800'
+                            ? 'bg-yellow-100 text-yellow-800'
+                            : message.includes('success')
+                                ? 'bg-green-100 text-green-800'
+                                : 'bg-red-100 text-red-800'
                             }`}>
                             {message}
                         </div>
@@ -124,8 +134,8 @@ export default function SignupPage() {
                                     type="button"
                                     onClick={() => setFormData({ ...formData, role: 'client' })}
                                     className={`py-3 px-4 rounded-lg border-2 font-medium transition ${formData.role === 'client'
-                                            ? 'border-[#1f7a5a] bg-[#1f7a5a] text-white'
-                                            : 'border-gray-300 hover:border-[#1f7a5a]'
+                                        ? 'border-[#1f7a5a] bg-[#1f7a5a] text-white'
+                                        : 'border-gray-300 hover:border-[#1f7a5a]'
                                         }`}
                                 >
                                     Client
@@ -134,8 +144,8 @@ export default function SignupPage() {
                                     type="button"
                                     onClick={() => setFormData({ ...formData, role: 'commissioner' })}
                                     className={`py-3 px-4 rounded-lg border-2 font-medium transition ${formData.role === 'commissioner'
-                                            ? 'border-[#1f7a5a] bg-[#1f7a5a] text-white'
-                                            : 'border-gray-300 hover:border-[#1f7a5a]'
+                                        ? 'border-[#1f7a5a] bg-[#1f7a5a] text-white'
+                                        : 'border-gray-300 hover:border-[#1f7a5a]'
                                         }`}
                                 >
                                     Commissioner
@@ -144,8 +154,8 @@ export default function SignupPage() {
                                     type="button"
                                     onClick={() => setFormData({ ...formData, role: 'developer' })}
                                     className={`py-3 px-4 rounded-lg border-2 font-medium transition ${formData.role === 'developer'
-                                            ? 'border-[#1f7a5a] bg-[#1f7a5a] text-white'
-                                            : 'border-gray-300 hover:border-[#1f7a5a]'
+                                        ? 'border-[#1f7a5a] bg-[#1f7a5a] text-white'
+                                        : 'border-gray-300 hover:border-[#1f7a5a]'
                                         }`}
                                 >
                                     Developer
@@ -155,6 +165,11 @@ export default function SignupPage() {
                                 <p className="text-xs text-yellow-600 mt-2">
                                     ⚠️ Requires admin approval before access
                                 </p>
+                            )}
+                            {formData.referralCode && formData.role === 'commissioner' && (
+                                <div className="mt-3 bg-green-50 border border-green-200 text-green-700 px-3 py-2 rounded text-sm flex items-center gap-2">
+                                    <span className="font-semibold">✓ Referral Active:</span> {formData.referralCode}
+                                </div>
                             )}
                         </div>
 

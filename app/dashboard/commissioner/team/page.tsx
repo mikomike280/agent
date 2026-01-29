@@ -1,28 +1,43 @@
 'use client';
 
-import { useState } from 'react';
-import { Users, DollarSign, TrendingUp, Copy, Share2, ShieldCheck, Award } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Users, DollarSign, TrendingUp, Copy, Share2, ShieldCheck, Award, Loader2 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { getLevelBadgeRaw, CommissionerLevel } from '@/lib/commission';
 
-// Mock Data for Downline
-const MOCK_DOWNLINE = [
-    { id: 1, name: 'Alice Wambui', level: 'silver', joined: '2025-10-12', revenue: 450000, my_earnings: 9000 },
-    { id: 2, name: 'Mark Ochieng', level: 'bronze', joined: '2025-11-05', revenue: 120000, my_earnings: 0 }, // Bronze generates 0 override? Or parent gets override on them? 
-    // Logic check: Parent gets override based on PARENT's level or CHILD's deal?
-    // Spec: "Parent Commissioner: 5% (Override)". Usually based on Parent's status or flat rate.
-    // Let's assume the mock earnings are correct based on the logic.
-    { id: 3, name: 'John Doe', level: 'bronze', joined: '2026-01-15', revenue: 0, my_earnings: 0 },
-];
-
 export default function TeamPage() {
-    const [referralLink, setReferralLink] = useState('https://techdevelopers.co.ke/join?ref=JK-992');
-    const myLevel: CommissionerLevel = 'gold'; // Mock curr user level
+    const [loading, setLoading] = useState(true);
+    const [data, setData] = useState<any>(null);
+    const [referralLink, setReferralLink] = useState('');
+
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const res = await fetch('/api/commissioner/team');
+                const json = await res.json();
+                if (res.ok) {
+                    setData(json);
+                    setReferralLink(`${window.location.origin}/join?ref=${json.referralCode || 'CODE'}`);
+                }
+            } catch (error) {
+                console.error(error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchData();
+    }, []);
 
     const handleCopy = () => {
         navigator.clipboard.writeText(referralLink);
         alert('Referral link copied!');
     };
+
+    if (loading) {
+        return <div className="p-12 flex justify-center"><Loader2 className="animate-spin text-gray-400" /></div>;
+    }
+
+    const { downline = [], stats = {}, level = 'bronze' } = data || {};
 
     return (
         <div className="space-y-8">
@@ -38,7 +53,7 @@ export default function TeamPage() {
                 <div className="relative z-10 max-w-lg">
                     <div className="flex items-center gap-3 mb-2">
                         <Award className="w-6 h-6 text-yellow-400" />
-                        <span className="font-bold text-indigo-200 uppercase tracking-widest text-sm">You are a {myLevel} Partner</span>
+                        <span className="font-bold text-indigo-200 uppercase tracking-widest text-sm">You are a {level} Partner</span>
                     </div>
                     <h3 className="text-2xl font-bold mb-2">Invite Commissioners, Earn 5% Forever</h3>
                     <p className="text-indigo-200">
@@ -47,13 +62,13 @@ export default function TeamPage() {
                 </div>
 
                 <div className="relative z-10 w-full md:w-auto bg-white/10 p-2 rounded-xl flex items-center gap-2 border border-white/20 backdrop-blur-sm">
-                    <code className="text-sm font-mono px-4">{referralLink}</code>
+                    <code className="text-sm font-mono px-4">{data?.referralCode || 'Generating...'}</code>
                     <button
                         onClick={handleCopy}
                         className="bg-white text-indigo-900 px-4 py-2 rounded-lg font-bold text-sm hover:bg-indigo-50 transition-colors flex items-center gap-2"
                     >
                         <Copy className="w-4 h-4" />
-                        Copy
+                        Copy Link
                     </button>
                 </div>
             </div>
@@ -62,7 +77,7 @@ export default function TeamPage() {
             <div className="grid md:grid-cols-3 gap-6">
                 <Card className="p-6 border-none shadow-lg bg-white">
                     <p className="text-xs font-black text-gray-400 uppercase tracking-widest mb-1">Total Downline</p>
-                    <h3 className="text-4xl font-black text-gray-900">{MOCK_DOWNLINE.length}</h3>
+                    <h3 className="text-4xl font-black text-gray-900">{stats.totalAgents || 0}</h3>
                     <div className="mt-4 flex items-center gap-2 text-xs font-bold text-indigo-600 bg-indigo-50 w-fit px-2 py-1 rounded-md">
                         <Users className="w-3 h-3" />
                         <span>Active Agents</span>
@@ -71,7 +86,7 @@ export default function TeamPage() {
 
                 <Card className="p-6 border-none shadow-lg bg-white">
                     <p className="text-xs font-black text-gray-400 uppercase tracking-widest mb-1">Team Revenue</p>
-                    <h3 className="text-4xl font-black text-gray-900">KES 570k</h3>
+                    <h3 className="text-4xl font-black text-gray-900">KES {(stats.teamRevenue || 0).toLocaleString()}</h3>
                     <div className="mt-4 flex items-center gap-2 text-xs font-bold text-green-600 bg-green-50 w-fit px-2 py-1 rounded-md">
                         <TrendingUp className="w-3 h-3" />
                         <span>Generated by team</span>
@@ -80,7 +95,7 @@ export default function TeamPage() {
 
                 <Card className="p-6 border-none shadow-lg bg-white">
                     <p className="text-xs font-black text-gray-400 uppercase tracking-widest mb-1">Lifetime Overrides</p>
-                    <h3 className="text-4xl font-black text-gray-900">KES 28,500</h3>
+                    <h3 className="text-4xl font-black text-gray-900">KES {(stats.lifetimeOverrides || 0).toLocaleString()}</h3>
                     <div className="mt-4 flex items-center gap-2 text-xs font-bold text-yellow-600 bg-yellow-50 w-fit px-2 py-1 rounded-md">
                         <DollarSign className="w-3 h-3" />
                         <span>Passive Income</span>
@@ -105,26 +120,34 @@ export default function TeamPage() {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-100">
-                            {MOCK_DOWNLINE.map((agent) => {
-                                const badge = getLevelBadgeRaw(agent.level as CommissionerLevel);
-                                return (
-                                    <tr key={agent.id} className="hover:bg-gray-50/50 transition-colors">
-                                        <td className="px-6 py-4 font-bold text-gray-900">{agent.name}</td>
-                                        <td className="px-6 py-4">
-                                            <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-widest ${badge.color}`}>
-                                                {badge.label}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4 text-gray-500">{agent.joined}</td>
-                                        <td className="px-6 py-4 text-right font-mono text-gray-600">
-                                            {agent.revenue > 0 ? `KES ${agent.revenue.toLocaleString()}` : '-'}
-                                        </td>
-                                        <td className="px-6 py-4 text-right font-bold text-green-600">
-                                            {agent.my_earnings > 0 ? `KES ${agent.my_earnings.toLocaleString()}` : '-'}
-                                        </td>
-                                    </tr>
-                                )
-                            })}
+                            {downline.length === 0 ? (
+                                <tr>
+                                    <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
+                                        You haven't referred anyone yet. Share your link to start building your team!
+                                    </td>
+                                </tr>
+                            ) : (
+                                downline.map((agent: any) => {
+                                    const badge = getLevelBadgeRaw(agent.level as CommissionerLevel);
+                                    return (
+                                        <tr key={agent.id} className="hover:bg-gray-50/50 transition-colors">
+                                            <td className="px-6 py-4 font-bold text-gray-900">{agent.name}</td>
+                                            <td className="px-6 py-4">
+                                                <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-widest ${badge.color}`}>
+                                                    {badge.label}
+                                                </span>
+                                            </td>
+                                            <td className="px-6 py-4 text-gray-500">{agent.joined}</td>
+                                            <td className="px-6 py-4 text-right font-mono text-gray-600">
+                                                {agent.revenue > 0 ? `KES ${agent.revenue.toLocaleString()}` : '-'}
+                                            </td>
+                                            <td className="px-6 py-4 text-right font-bold text-green-600">
+                                                {agent.my_earnings > 0 ? `KES ${agent.my_earnings.toLocaleString()}` : '-'}
+                                            </td>
+                                        </tr>
+                                    );
+                                })
+                            )}
                         </tbody>
                     </table>
                 </div>
