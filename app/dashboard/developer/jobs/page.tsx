@@ -16,6 +16,7 @@ import {
     Rocket
 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
+import Link from 'next/link';
 
 export default function DeveloperJobsPage() {
     const { data: session } = useSession();
@@ -146,10 +147,13 @@ export default function DeveloperJobsPage() {
                                         <Send className="w-5 h-5 group-hover/btn:translate-x-1 group-hover/btn:-translate-y-1 transition-transform" />
                                         Submit Delivery
                                     </button>
-                                    <button className="flex-1 py-4 bg-white border-2 border-gray-100 text-gray-700 rounded-2xl font-bold flex items-center justify-center gap-2 hover:border-gray-200 hover:bg-gray-50 transition-all">
+                                    <Link
+                                        href={`/dashboard/developer/jobs/${job.id}`}
+                                        className="flex-1 py-4 bg-white border-2 border-gray-100 text-gray-700 rounded-2xl font-bold flex items-center justify-center gap-2 hover:border-gray-200 hover:bg-gray-50 transition-all"
+                                    >
                                         <FileCode className="w-5 h-5" />
-                                        Docs
-                                    </button>
+                                        Project Portal
+                                    </Link>
                                 </div>
                             </div>
                         </Card>

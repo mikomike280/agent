@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
             .from('invoices')
             .select(`
                 *,
-                client:clients(name, email),
+                client:clients(id, user:users(name, email)),
                 project:projects(title)
             `)
             .order('created_at', { ascending: false });
@@ -50,16 +50,17 @@ export async function POST(request: NextRequest) {
             amount,
             description,
             invoice_number,
-            commissioner_id // Optional: who created it
+            commissioner_id,
+            items // Dynamic Array of { description, quantity, unit_price, total_price }
         } = body;
 
-        // Create invoice in DB with 'pending_approval' status
+        // 1. Create invoice in DB with 'pending_approval' status
         const { data: invoice, error } = await supabaseAdmin
             .from('invoices')
             .insert({
                 client_id,
                 project_id,
-                commissioner_id: commissioner_id || (session.user as any).id, // Fallback to current user
+                commissioner_id: commissioner_id || (session.user as any).id,
                 amount,
                 description,
                 invoice_number,
@@ -71,10 +72,26 @@ export async function POST(request: NextRequest) {
 
         if (error) throw error;
 
+        // 2. Insert invoice details if items provided
+        if (items && Array.isArray(items) && items.length > 0) {
+            const { error: itemsError } = await supabaseAdmin
+                .from('invoice_items')
+                .insert(
+                    items.map(item => ({
+                        invoice_id: invoice.id,
+                        description: item.description,
+                        quantity: item.quantity,
+                        unit_price: item.unit_price,
+                        total_price: item.total_price
+                    }))
+                );
+            if (itemsError) throw itemsError;
+        }
+
         return NextResponse.json({
             success: true,
             data: invoice,
-            message: 'Invoice request submitted for admin approval.'
+            message: 'Detailed invoice request submitted for admin approval.'
         });
 
     } catch (error: any) {

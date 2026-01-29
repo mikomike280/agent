@@ -46,7 +46,7 @@ export async function POST(req: Request) {
 
         // 3. Audit Log
         await db.createAuditLog(
-            comm.id,
+            userId,
             'commissioner',
             'lead_contacted',
             { lead_id: leadId }

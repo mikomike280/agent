@@ -22,7 +22,7 @@ export async function GET(req: Request) {
                 .from('messages')
                 .select(`
                     *,
-                    sender:users(full_name, role)
+                    sender:users(name, role)
                 `)
                 .eq('conversation_id', conversationId)
                 .order('created_at', { ascending: true });
@@ -37,7 +37,7 @@ export async function GET(req: Request) {
                     conversation:conversations(
                         *,
                         participants:conversation_participants(
-                            user:users(id, full_name, role)
+                            user:users(id, name, role)
                         )
                     )
                 `)

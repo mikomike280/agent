@@ -73,7 +73,7 @@ export default function MessagingPage() {
             content: newMessage,
             sender_id: (session?.user as any).id,
             created_at: new Date().toISOString(),
-            sender: { full_name: session?.user?.name }
+            sender: { name: session?.user?.name }
         };
 
         setMessages([...messages, optimisticMsg]);
@@ -128,8 +128,8 @@ export default function MessagingPage() {
                                 key={conv.id}
                                 onClick={() => setSelectedConv(conv)}
                                 className={`w-full p-4 rounded-2xl flex items-center gap-4 transition-all duration-300 ${selectedConv?.id === conv.id
-                                        ? 'bg-white shadow-xl shadow-indigo-100 border border-indigo-50'
-                                        : 'hover:bg-white/50 border border-transparent'
+                                    ? 'bg-white shadow-xl shadow-indigo-100 border border-indigo-50'
+                                    : 'hover:bg-white/50 border border-transparent'
                                     }`}
                             >
                                 <div className="relative">
@@ -188,14 +188,14 @@ export default function MessagingPage() {
                                     <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
                                         <div className={`max-w-[70%] group ${isMe ? 'items-end' : 'items-start'} flex flex-col gap-2`}>
                                             <div className="flex items-center gap-2 mb-1">
-                                                {!isMe && <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest px-2">{msg.sender?.full_name}</span>}
+                                                {!isMe && <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest px-2">{msg.sender?.name}</span>}
                                                 <span className="text-[10px] text-gray-400 font-bold opacity-0 group-hover:opacity-100 transition-opacity">
                                                     {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                                 </span>
                                             </div>
                                             <div className={`p-4 rounded-2xl text-sm leading-relaxed shadow-sm ${isMe
-                                                    ? 'bg-indigo-600 text-white rounded-tr-none'
-                                                    : 'bg-white text-gray-700 border border-gray-100 rounded-tl-none'
+                                                ? 'bg-indigo-600 text-white rounded-tr-none'
+                                                : 'bg-white text-gray-700 border border-gray-100 rounded-tl-none'
                                                 }`}>
                                                 {msg.content}
                                             </div>

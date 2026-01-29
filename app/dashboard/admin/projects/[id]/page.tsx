@@ -15,6 +15,7 @@ import {
     Loader2
 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
+import ProjectFileManager from '@/components/projects/ProjectFileManager';
 
 export default function AdminProjectDetailPage({ params }: { params: { id: string } }) {
     const { data: session } = useSession();
@@ -140,6 +141,8 @@ export default function AdminProjectDetailPage({ params }: { params: { id: strin
                             )) || <span className="text-gray-400 italic">No specific skills listed</span>}
                         </div>
                     </Card>
+
+                    <ProjectFileManager projectId={id} />
                 </div>
 
                 {/* Sidebar / Matcher */}

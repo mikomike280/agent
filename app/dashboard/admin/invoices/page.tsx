@@ -86,8 +86,8 @@ export default function AdminInvoicesPage() {
                         key={status}
                         onClick={() => setFilter(status)}
                         className={`px-4 py-2 rounded-xl text-sm font-bold capitalize transition-all ${filter === status
-                                ? 'bg-[var(--primary)] text-white shadow-lg'
-                                : 'bg-[var(--bg-input)] text-[var(--text-secondary)] hover:bg-[var(--bg-input)]/80'
+                            ? 'bg-[var(--primary)] text-white shadow-lg'
+                            : 'bg-[var(--bg-input)] text-[var(--text-secondary)] hover:bg-[var(--bg-input)]/80'
                             }`}
                     >
                         {status.replace('_', ' ')}
@@ -162,13 +162,13 @@ export default function AdminInvoicesPage() {
                                     <tr key={invoice.id} className="hover:bg-[var(--bg-input)]/20 transition-colors">
                                         <td className="px-6 py-4">
                                             <p className="font-bold text-[var(--text-primary)]">
-                                                {invoice.client?.name || 'Unknown Client'}
+                                                {invoice.client?.user?.name || 'Unknown Client'}
                                             </p>
                                         </td>
                                         <td className="px-6 py-4">
                                             <div className="flex items-center gap-2">
                                                 <Mail className="w-4 h-4 text-[var(--text-secondary)]" />
-                                                <code className="text-sm">{invoice.email || 'N/A'}</code>
+                                                <code className="text-sm">{invoice.client?.user?.email || 'N/A'}</code>
                                             </div>
                                         </td>
                                         <td className="px-6 py-4">
@@ -178,7 +178,7 @@ export default function AdminInvoicesPage() {
                                         </td>
                                         <td className="px-6 py-4">
                                             <p className="text-sm text-[var(--text-secondary)]">
-                                                {invoice.payment?.project?.title || 'N/A'}
+                                                {invoice.project?.title || 'N/A'}
                                             </p>
                                         </td>
                                         <td className="px-6 py-4 text-sm text-[var(--text-secondary)]">
@@ -203,8 +203,8 @@ export default function AdminInvoicesPage() {
                                                 </div>
                                             ) : (
                                                 <span className={`px-3 py-1 rounded-lg text-xs font-bold ${invoice.status === 'approved'
-                                                        ? 'bg-green-100 text-green-700'
-                                                        : 'bg-red-100 text-red-700'
+                                                    ? 'bg-green-100 text-green-700'
+                                                    : 'bg-red-100 text-red-700'
                                                     }`}>
                                                     {invoice.status}
                                                 </span>

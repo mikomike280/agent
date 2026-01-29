@@ -6,6 +6,8 @@ import { useState, useEffect } from 'react';
 import { ArrowLeft, Users, DollarSign, Calendar, CheckCircle, Clock, MessageSquare, Loader2 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import Link from 'next/link';
+import ProjectFileManager from '@/components/projects/ProjectFileManager';
+import ProjectChat from '@/components/dashboard/ProjectChat';
 
 interface Project {
     id: string;
@@ -154,19 +156,10 @@ export default function ProjectDetailPage() {
                         )}
                     </Card>
 
-                    {/* Quick Chat */}
-                    <Card className="p-6">
-                        <h2 className="text-xl font-bold text-[var(--text-primary)] mb-4 flex items-center gap-2">
-                            <MessageSquare className="w-6 h-6" />
-                            Team Communication
-                        </h2>
-                        <Link
-                            href="/dashboard/client/messages"
-                            className="btn-primary w-full py-3 rounded-xl text-center block"
-                        >
-                            Open Messages
-                        </Link>
-                    </Card>
+                    <ProjectFileManager projectId={params.id as string} />
+
+                    {/* Project Chat */}
+                    <ProjectChat projectId={params.id as string} currentUserId={(session?.user as any)?.id} />
                 </div>
 
                 {/* Sidebar */}

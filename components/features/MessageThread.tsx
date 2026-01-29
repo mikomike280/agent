@@ -11,7 +11,7 @@ interface Message {
     content: string;
     created_at: string;
     sender: {
-        full_name: string;
+        name: string;
         role: string;
     };
 }
@@ -108,13 +108,13 @@ export function MessageThread({ conversationId }: MessageThreadProps) {
                             >
                                 <div
                                     className={`max-w-[70%] ${isOwn
-                                            ? 'bg-[var(--primary)] text-white'
-                                            : 'bg-[var(--bg-input)] text-[var(--text-primary)]'
+                                        ? 'bg-[var(--primary)] text-white'
+                                        : 'bg-[var(--bg-input)] text-[var(--text-primary)]'
                                         } rounded-2xl px-4 py-3 shadow-sm`}
                                 >
                                     {!isOwn && (
                                         <p className="text-xs font-semibold mb-1 opacity-70">
-                                            {msg.sender.full_name}
+                                            {msg.sender.name}
                                         </p>
                                     )}
                                     <p className="text-sm whitespace-pre-wrap break-words">

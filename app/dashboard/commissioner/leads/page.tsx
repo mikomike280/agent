@@ -12,7 +12,9 @@ import {
     ChevronRight,
     Target,
     Plus,
-    X
+    X,
+    MessageSquare,
+    Briefcase
 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { LeadBarChart } from '@/components/ui/charts';
@@ -24,6 +26,7 @@ export default function CommissionerLeadsPage() {
     const [leads, setLeads] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
+    const [activeTab, setActiveTab] = useState<'public' | 'mine'>('public');
 
     // Modal State
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -95,11 +98,6 @@ export default function CommissionerLeadsPage() {
         }
     };
 
-    const copyToClipboard = (text: string) => {
-        navigator.clipboard.writeText(text);
-        alert('Intake link copied to clipboard!');
-    };
-
     const handleLogContact = async (leadId: string) => {
         try {
             const res = await fetch('/api/leads/contact', {
@@ -132,6 +130,7 @@ export default function CommissionerLeadsPage() {
             if (res.ok) {
                 alert(json.message || 'Lead claimed successfully!');
                 fetchLeads();
+                setActiveTab('mine'); // Switch to My Leads tab
             } else {
                 alert(json.message || 'Failed to claim lead');
             }
@@ -141,24 +140,57 @@ export default function CommissionerLeadsPage() {
         }
     };
 
-    const filteredLeads = leads.filter(lead =>
-        lead.client_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        lead.client_email?.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const myCommId = (session?.user as any)?.commissioner_id;
+
+    const filteredLeads = leads.filter(lead => {
+        const matchesSearch = lead.client_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            lead.client_email?.toLowerCase().includes(searchTerm.toLowerCase());
+
+        if (!matchesSearch) return false;
+
+        if (activeTab === 'public') {
+            // Public pool: Unclaimed leads
+            return !lead.claimed_by;
+        } else {
+            // My Leads: Claimed by me
+            return lead.claimed_by === myCommId;
+        }
+    });
 
     return (
         <div className="space-y-8 relative">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
                 <div>
-                    <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[var(--primary)] to-[var(--accent)] tracking-tight">Public Lead Pool</h1>
-                    <p className="text-[var(--text-secondary)] mt-2">View all available leads and add new ones to the pool.</p>
+                    <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[var(--primary)] to-[var(--accent)] tracking-tight">
+                        {activeTab === 'public' ? 'Public Lead Pool' : 'My Active Leads'}
+                    </h1>
+                    <p className="text-[var(--text-secondary)] mt-2">
+                        {activeTab === 'public'
+                            ? 'View available leads and add new ones to the pool.'
+                            : 'Manage your claimed leads and secure them by logging contact.'}
+                    </p>
                 </div>
-                <div className="flex gap-4 w-full md:w-auto">
+                <div className="flex gap-4 w-full md:w-auto items-center">
+                    <div className="flex bg-[var(--bg-card)] p-1 rounded-2xl border border-[var(--bg-input)]">
+                        <button
+                            onClick={() => setActiveTab('public')}
+                            className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${activeTab === 'public' ? 'bg-[var(--primary)] text-white shadow-lg' : 'text-[var(--text-secondary)] hover:bg-[var(--bg-input)]'}`}
+                        >
+                            Public Pool
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('mine')}
+                            className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${activeTab === 'mine' ? 'bg-[var(--primary)] text-white shadow-lg' : 'text-[var(--text-secondary)] hover:bg-[var(--bg-input)]'}`}
+                        >
+                            My Leads
+                        </button>
+                    </div>
+
                     <div className="relative flex-1 md:w-64">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                         <input
                             type="text"
-                            placeholder="Search pool..."
+                            placeholder="Search..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             className="w-full pl-10 pr-4 py-3 border border-[var(--bg-input)] rounded-2xl focus:ring-2 focus:ring-[var(--primary)] outline-none bg-[var(--bg-card)] shadow-sm text-[var(--text-primary)]"
@@ -169,36 +201,38 @@ export default function CommissionerLeadsPage() {
                         className="btn-primary flex items-center gap-2 px-6 py-3 rounded-2xl shadow-lg shadow-indigo-500/20"
                     >
                         <Plus className="w-5 h-5" />
-                        Add Lead
+                        <span className="hidden md:inline">Add Lead</span>
                     </button>
                 </div>
             </div>
 
-            {/* Performance Chart Area */}
-            <div className="grid md:grid-cols-3 gap-8">
-                <Card className="md:col-span-2 p-8 border-none bg-[var(--bg-card)] shadow-xl shadow-green-900/5 overflow-hidden relative group">
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-[var(--primary)]/10 rounded-full -mr-16 -mt-16 opacity-50 blur-3xl group-hover:scale-110 transition-transform"></div>
-                    <h3 className="text-lg font-black text-[var(--text-primary)] uppercase tracking-widest mb-2">Pool Velocity</h3>
-                    <p className="text-xs text-[var(--text-secondary)] font-medium mb-6">New leads added to the pool (7 days)</p>
-                    <LeadBarChart />
-                </Card>
+            {/* Performance Chart Area - Only show on Public Tab for now */}
+            {activeTab === 'public' && (
+                <div className="grid md:grid-cols-3 gap-8">
+                    <Card className="md:col-span-2 p-8 border-none bg-[var(--bg-card)] shadow-xl shadow-green-900/5 overflow-hidden relative group">
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-[var(--primary)]/10 rounded-full -mr-16 -mt-16 opacity-50 blur-3xl group-hover:scale-110 transition-transform"></div>
+                        <h3 className="text-lg font-black text-[var(--text-primary)] uppercase tracking-widest mb-2">Pool Velocity</h3>
+                        <p className="text-xs text-[var(--text-secondary)] font-medium mb-6">New leads added to the pool (7 days)</p>
+                        <LeadBarChart />
+                    </Card>
 
-                <Card className="p-8 bg-gradient-to-br from-[var(--primary)] to-[var(--secondary)] text-white border-none shadow-xl shadow-indigo-500/20 flex flex-col justify-between">
-                    <div>
-                        <h3 className="text-lg font-bold">Total Pool Value</h3>
-                        <p className="text-white/80 text-sm opacity-80 mt-1">Estimated Budget</p>
-                    </div>
-                    <div className="py-8">
-                        <h2 className="text-4xl font-black">
-                            KES {leads.reduce((sum, l) => sum + (Number(l.budget) || 0), 0).toLocaleString()}
-                        </h2>
-                        <p className="text-white/60 text-xs font-bold mt-2 uppercase tracking-widest italic">Across {leads.length} Active Leads</p>
-                    </div>
-                    <button className="w-full py-3 bg-white/10 hover:bg-white/20 transition-colors rounded-xl font-bold text-xs uppercase tracking-widest border border-white/20">
-                        View Analytics
-                    </button>
-                </Card>
-            </div>
+                    <Card className="p-8 bg-gradient-to-br from-[var(--primary)] to-[var(--secondary)] text-white border-none shadow-xl shadow-indigo-500/20 flex flex-col justify-between">
+                        <div>
+                            <h3 className="text-lg font-bold">Total Pool Value</h3>
+                            <p className="text-white/80 text-sm opacity-80 mt-1">Estimated Budget</p>
+                        </div>
+                        <div className="py-8">
+                            <h2 className="text-4xl font-black">
+                                KES {leads.filter(l => !l.claimed_by).reduce((sum, l) => sum + (Number(l.budget) || 0), 0).toLocaleString()}
+                            </h2>
+                            <p className="text-white/60 text-xs font-bold mt-2 uppercase tracking-widest italic">Across {leads.filter(l => !l.claimed_by).length} Available Leads</p>
+                        </div>
+                        <button className="w-full py-3 bg-white/10 hover:bg-white/20 transition-colors rounded-xl font-bold text-xs uppercase tracking-widest border border-white/20">
+                            View Analytics
+                        </button>
+                    </Card>
+                </div>
+            )}
 
             {/* Leads Table Card */}
             <Card className="overflow-hidden border-[var(--bg-input)] shadow-xl shadow-gray-900/5 bg-[var(--bg-card)]">
@@ -218,22 +252,26 @@ export default function CommissionerLeadsPage() {
                             {loading ? (
                                 Array(5).fill(0).map((_, i) => (
                                     <tr key={i} className="animate-pulse">
-                                        <td colSpan={5} className="px-8 py-6"><div className="h-5 bg-[var(--bg-input)] rounded w-full"></div></td>
+                                        <td colSpan={6} className="px-8 py-6"><div className="h-5 bg-[var(--bg-input)] rounded w-full"></div></td>
                                     </tr>
                                 ))
                             ) : filteredLeads.length === 0 ? (
                                 <tr>
-                                    <td colSpan={5} className="px-8 py-20 text-center">
+                                    <td colSpan={6} className="px-8 py-20 text-center">
                                         <div className="w-16 h-16 bg-[var(--bg-input)] rounded-full flex items-center justify-center mx-auto mb-4">
                                             <Target className="w-8 h-8 text-[var(--text-secondary)]" />
                                         </div>
-                                        <p className="text-[var(--text-secondary)] font-medium italic">No leads in the pool yet. Be the first to add one!</p>
+                                        <p className="text-[var(--text-secondary)] font-medium italic">
+                                            {activeTab === 'public'
+                                                ? 'No leads in the pool yet. Be the first to add one!'
+                                                : 'You haven\'t claimed any leads yet. Check the Public Pool!'}
+                                        </p>
                                     </td>
                                 </tr>
                             ) : (
                                 filteredLeads.map((lead) => {
                                     const isMyLead = lead.claimed_by && (session?.user as any)?.commissioner_id === lead.claimed_by;
-                                    const isClaimable = !lead.claimed_by && lead.status === 'created';
+                                    const isClaimable = !lead.claimed_by && activeTab === 'public';
 
                                     return (
                                         <tr key={lead.id} className="group hover:bg-[var(--bg-app)] transition-all duration-300">
@@ -257,7 +295,7 @@ export default function CommissionerLeadsPage() {
                                             </td>
                                             <td className="px-8 py-6">
                                                 <p className="text-sm text-[var(--text-secondary)]">
-                                                    {lead.client_phone || 'Not provided'}
+                                                    {isMyLead ? (lead.client_phone || 'Not provided') : 'Locked'}
                                                 </p>
                                             </td>
                                             <td className="px-8 py-6">

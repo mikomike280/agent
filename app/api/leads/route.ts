@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
 
         // Audit Log
         await db.createAuditLog(
-            commissioner_id,
+            user_id || (commissioner_id ? lead.commissioner_id : null),
             'commissioner',
             'lead_created',
             { lead_id: lead.id, client_name, note: 'Public Pool Lead - Message inquiry' }

@@ -57,9 +57,9 @@ export default async function ClientProjectsPage() {
                                     <div className="flex items-center gap-2 mb-2">
                                         <h2 className="text-xl font-bold text-gray-900">{project.title}</h2>
                                         <span className={`px-3 py-1 rounded-full text-xs font-semibold ${project.status === 'completed' ? 'bg-green-100 text-green-700' :
-                                                project.status === 'active' ? 'bg-blue-100 text-blue-700' :
-                                                    project.status === 'deposit_pending' ? 'bg-yellow-100 text-yellow-700' :
-                                                        'bg-gray-100 text-gray-700'
+                                            project.status === 'active' ? 'bg-blue-100 text-blue-700' :
+                                                project.status === 'deposit_pending' ? 'bg-yellow-100 text-yellow-700' :
+                                                    'bg-gray-100 text-gray-700'
                                             }`}>
                                             {project.status.replace('_', ' ').toUpperCase()}
                                         </span>
@@ -116,8 +116,8 @@ export default async function ClientProjectsPage() {
                                             project.milestones.map((milestone: any, index: number) => (
                                                 <div key={milestone.id} className="relative">
                                                     <div className={`absolute -left-[29px] w-4 h-4 rounded-full border-2 ${milestone.status === 'approved' ? 'bg-green-500 border-green-500' :
-                                                            milestone.status === 'in_progress' ? 'bg-blue-500 border-white ring-2 ring-blue-100' :
-                                                                'bg-gray-200 border-white'
+                                                        milestone.status === 'in_progress' ? 'bg-blue-500 border-white ring-2 ring-blue-100' :
+                                                            'bg-gray-200 border-white'
                                                         }`}></div>
                                                     <div className="flex justify-between items-start">
                                                         <div>
@@ -127,8 +127,8 @@ export default async function ClientProjectsPage() {
                                                             <p className="text-sm text-gray-500">{milestone.description}</p>
                                                         </div>
                                                         <span className={`text-xs px-2 py-1 rounded ${milestone.status === 'approved' ? 'bg-green-100 text-green-700' :
-                                                                milestone.status === 'in_progress' ? 'bg-blue-100 text-blue-700' :
-                                                                    'bg-gray-100 text-gray-600'
+                                                            milestone.status === 'in_progress' ? 'bg-blue-100 text-blue-700' :
+                                                                'bg-gray-100 text-gray-600'
                                                             }`}>
                                                             {milestone.status}
                                                         </span>
@@ -154,9 +154,12 @@ export default async function ClientProjectsPage() {
                                         {/* TODO: Connect to developer update feed */}
                                     </div>
                                     <div className="mt-4 flex justify-end">
-                                        <button className="text-sm text-[#1f7a5a] font-medium hover:underline flex items-center gap-1">
-                                            View all files <ExternalLink className="w-3 h-3" />
-                                        </button>
+                                        <Link
+                                            href={`/dashboard/client/projects/${project.id}`}
+                                            className="text-sm text-[#1f7a5a] font-black hover:underline flex items-center gap-1 bg-green-50 px-4 py-2 rounded-lg"
+                                        >
+                                            Project Portal & Files <ExternalLink className="w-3 h-3" />
+                                        </Link>
                                     </div>
                                 </div>
                             </div>

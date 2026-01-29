@@ -18,7 +18,8 @@ export default function CommissionerInvoicesPage() {
         project_id: '',
         amount: '',
         description: '',
-        invoice_number: `INV-${Date.now()}` // Default auto-gen
+        invoice_number: `INV-${Date.now()}`,
+        items: [{ description: '', quantity: 1, unit_price: 0, total_price: 0 }]
     });
 
     useEffect(() => {
@@ -46,11 +47,30 @@ export default function CommissionerInvoicesPage() {
         }
     };
 
+    const addItem = () => {
+        setFormData({
+            ...formData,
+            items: [...formData.items, { description: '', quantity: 1, unit_price: 0, total_price: 0 }]
+        });
+    };
+
+    const updateItem = (index: number, field: string, value: any) => {
+        const newItems = [...formData.items];
+        newItems[index] = { ...newItems[index], [field]: value };
+        if (field === 'quantity' || field === 'unit_price') {
+            newItems[index].total_price = Number(newItems[index].quantity) * Number(newItems[index].unit_price);
+        }
+
+        // Auto-calculate total amount
+        const total = newItems.reduce((acc, item) => acc + item.total_price, 0);
+
+        setFormData({ ...formData, items: newItems, amount: total.toString() });
+    };
+
     const handleCreateInvoice = async (e: React.FormEvent) => {
         e.preventDefault();
         setSubmitting(true);
 
-        // Find selected project to get client_id
         const selectedProject = projects.find(p => p.id === formData.project_id);
         if (!selectedProject) {
             alert('Please select a valid project');
@@ -67,19 +87,21 @@ export default function CommissionerInvoicesPage() {
                     client_id: selectedProject.client_id,
                     amount: Number(formData.amount),
                     description: formData.description,
-                    invoice_number: formData.invoice_number
+                    invoice_number: formData.invoice_number,
+                    items: formData.items
                 })
             });
             const json = await res.json();
 
             if (res.ok) {
-                alert('Invoice request sent for approval!');
+                alert('Detailed invoice request sent for approval!');
                 setShowModal(false);
                 setFormData({
                     project_id: '',
                     amount: '',
                     description: '',
-                    invoice_number: `INV-${Date.now()}`
+                    invoice_number: `INV-${Date.now()}`,
+                    items: [{ description: '', quantity: 1, unit_price: 0, total_price: 0 }]
                 });
                 fetchData();
             } else {
@@ -202,15 +224,52 @@ export default function CommissionerInvoicesPage() {
                             </div>
 
                             <div>
-                                <label className="block text-sm font-bold text-gray-700 mb-1">Amount (KES)</label>
+                                <label className="block text-sm font-bold text-gray-700 mb-2">Items</label>
+                                <div className="space-y-3 mb-4">
+                                    {formData.items.map((item, index) => (
+                                        <div key={index} className="grid grid-cols-12 gap-2">
+                                            <input
+                                                className="col-span-6 px-3 py-2 border rounded-lg text-sm"
+                                                placeholder="Service"
+                                                value={item.description}
+                                                onChange={e => updateItem(index, 'description', e.target.value)}
+                                            />
+                                            <input
+                                                className="col-span-2 px-3 py-2 border rounded-lg text-sm"
+                                                type="number"
+                                                placeholder="Qty"
+                                                value={item.quantity}
+                                                onChange={e => updateItem(index, 'quantity', e.target.value)}
+                                            />
+                                            <input
+                                                className="col-span-4 px-3 py-2 border rounded-lg text-sm"
+                                                type="number"
+                                                placeholder="Price"
+                                                value={item.unit_price}
+                                                onChange={e => updateItem(index, 'unit_price', e.target.value)}
+                                            />
+                                        </div>
+                                    ))}
+                                    <button
+                                        type="button"
+                                        onClick={addItem}
+                                        className="text-xs text-indigo-600 font-bold flex items-center gap-1 hover:underline"
+                                    >
+                                        <Plus className="w-3 h-3" /> Add Item
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 mb-1">Total Amount (KES)</label>
                                 <input
-                                    required
+                                    readOnly
                                     type="number"
-                                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-indigo-500 outline-none"
+                                    className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 outline-none font-bold text-indigo-600"
                                     placeholder="0.00"
                                     value={formData.amount}
-                                    onChange={e => setFormData({ ...formData, amount: e.target.value })}
                                 />
+                                <p className="text-[10px] text-gray-400 mt-1">Calculated automatically from items list.</p>
                             </div>
 
                             <div>

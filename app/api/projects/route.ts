@@ -101,6 +101,7 @@ export async function POST(request: NextRequest) {
             .insert({
                 client_id: client.id,
                 commissioner_id: projectType === 'direct' ? commissionerId : null,
+                lead_id: body.leadId || null,
                 title,
                 description,
                 budget,
@@ -113,6 +114,14 @@ export async function POST(request: NextRequest) {
             .single();
 
         if (error) throw error;
+
+        // If it was from a lead, mark the lead as converted
+        if (body.leadId) {
+            await supabaseAdmin
+                .from('leads')
+                .update({ status: 'converted', updated_at: new Date() })
+                .eq('id', body.leadId);
+        }
 
         return NextResponse.json({
             success: true,

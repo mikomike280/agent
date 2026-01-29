@@ -11,11 +11,14 @@ import {
     Settings,
     User, // Added User icon
     Users,
-    LogOut,
-    Bell,
     Search,
     MessageSquare,
-    Target
+    Target,
+    Megaphone,
+    BookOpen,
+    LogOut,
+    Bell,
+    FileText
 } from 'lucide-react';
 import { signOut } from 'next-auth/react';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
@@ -23,9 +26,12 @@ import { ThemeToggle } from '@/components/ui/ThemeToggle';
 const menuItems = {
     admin: [
         { name: 'Dashboard', icon: LayoutDashboard, href: '/dashboard/admin' },
+        { name: 'Approvals', icon: Shield, href: '/dashboard/admin/approvals' },
         { name: 'Payments', icon: CreditCard, href: '/dashboard/admin/payments' },
+        { name: 'Ledger', icon: FileText, href: '/dashboard/admin/ledger' },
         { name: 'Projects', icon: Briefcase, href: '/dashboard/admin/projects' },
         { name: 'Users', icon: Users, href: '/dashboard/admin/users' },
+        { name: 'Knowledge Base', icon: BookOpen, href: '/dashboard/kb' },
         { name: 'Profile', icon: User, href: '/dashboard/profile' },
     ],
     client: [
@@ -33,12 +39,15 @@ const menuItems = {
         { name: 'Messages', icon: MessageSquare, href: '/dashboard/client/messages' },
         { name: 'Find Talent', icon: Search, href: '/dashboard/client/discovery' },
         { name: 'My Projects', icon: Briefcase, href: '/dashboard/client/projects' },
+        { name: 'Knowledge Base', icon: BookOpen, href: '/dashboard/kb' },
         { name: 'Payments', icon: CreditCard, href: '/dashboard/client/payments' },
         { name: 'Profile', icon: User, href: '/dashboard/profile' },
     ],
     commissioner: [
         { name: 'Dashboard', href: '/dashboard/commissioner', icon: LayoutDashboard },
         { name: 'Leads', href: '/dashboard/commissioner/leads', icon: Target },
+        { name: 'Marketing', href: '/dashboard/commissioner/marketing', icon: Megaphone },
+        { name: 'Knowledge Base', href: '/dashboard/kb', icon: BookOpen },
         { name: 'Team', href: '/dashboard/commissioner/team', icon: Users },
         { name: 'Profile', href: '/dashboard/profile', icon: User },
         { name: 'Messages', href: '/dashboard/commissioner/messages', icon: MessageSquare },
@@ -48,6 +57,7 @@ const menuItems = {
         { name: 'Work Queue', icon: LayoutDashboard, href: '/dashboard/developer' },
         { name: 'Messages', icon: MessageSquare, href: '/dashboard/developer/messages' },
         { name: 'Active Jobs', icon: Briefcase, href: '/dashboard/developer/jobs' },
+        { name: 'Knowledge Base', icon: BookOpen, href: '/dashboard/kb' },
         { name: 'Earnings', icon: CreditCard, href: '/dashboard/developer/earnings' },
         { name: 'Profile', icon: User, href: '/dashboard/profile' },
     ]
@@ -97,17 +107,23 @@ export function Sidebar({ role }: { role: 'admin' | 'client' | 'commissioner' | 
                     Support
                 </p>
                 <Link
-                    href="/support"
-                    className="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-500 hover:bg-gray-50 hover:text-gray-900 transition-all"
+                    href={`/dashboard/${role}/support`}
+                    className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group ${pathname.includes('/support')
+                        ? 'bg-indigo-50/80 text-[#5347CE] font-semibold shadow-sm'
+                        : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
+                        }`}
                 >
-                    <Shield className="w-5 h-5 text-gray-400" />
-                    Help Center
+                    <Shield className={`w-5 h-5 ${pathname.includes('/support') ? 'text-[#5347CE]' : 'text-gray-400'}`} />
+                    Support Tickets
                 </Link>
                 <Link
-                    href="/settings"
-                    className="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-500 hover:bg-gray-50 hover:text-gray-900 transition-all"
+                    href="/dashboard/settings"
+                    className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group ${pathname.includes('/settings')
+                        ? 'bg-indigo-50/80 text-[#5347CE] font-semibold shadow-sm'
+                        : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
+                        }`}
                 >
-                    <Settings className="w-5 h-5 text-gray-400" />
+                    <Settings className={`w-5 h-5 ${pathname.includes('/settings') ? 'text-[#5347CE]' : 'text-gray-400'}`} />
                     Settings
                 </Link>
             </nav>
@@ -118,7 +134,7 @@ export function Sidebar({ role }: { role: 'admin' | 'client' | 'commissioner' | 
                     <ThemeToggle />
                 </div>
                 <button
-                    onClick={() => signOut({ callbackUrl: '/login' })}
+                    onClick={() => signOut({ callbackUrl: '/' })}
                     className="flex items-center gap-3 px-4 py-3 w-full rounded-xl text-[var(--text-secondary)] hover:bg-red-500/10 hover:text-red-600 hover:shadow-[0_2px_10px_rgba(239,68,68,0.1)] transition-all duration-300 group border border-transparent hover:border-red-200"
                 >
                     <LogOut className="w-5 h-5 transition-transform group-hover:-translate-x-1 group-hover:scale-110" />
