@@ -12,7 +12,8 @@ import {
     Users,
     LogOut,
     Bell,
-    Search
+    Search,
+    MessageSquare
 } from 'lucide-react';
 import { signOut } from 'next-auth/react';
 
@@ -24,7 +25,8 @@ const menuItems = {
         { name: 'Users', icon: Users, href: '/dashboard/admin/users' },
     ],
     client: [
-        { name: 'Overview', icon: LayoutDashboard, href: '/dashboard/client' },
+        { name: 'Dashboard', icon: LayoutDashboard, href: '/dashboard/client' },
+        { name: 'Find Talent', icon: Search, href: '/dashboard/client/discovery' },
         { name: 'My Projects', icon: Briefcase, href: '/dashboard/client/projects' },
         { name: 'Payments', icon: CreditCard, href: '/dashboard/client/payments' },
     ],
@@ -45,7 +47,7 @@ export function Sidebar({ role }: { role: 'admin' | 'client' | 'commissioner' | 
     const items = menuItems[role] || [];
 
     return (
-        <aside className="w-64 bg-white border-r border-gray-100 h-screen fixed left-0 top-0 flex flex-col z-20 shadow-[4px_0_24px_rgba(0,0,0,0.02)]">
+        <aside className="w-64 bg-[var(--bg-sidebar)] border-r border-[var(--bg-input)] h-screen fixed left-0 top-0 flex flex-col z-20 shadow-[4px_0_24px_rgba(0,0,0,0.2)]">
             {/* Brand */}
             <div className="p-8 pb-4">
                 <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#5347CE] to-[#16C8C7]">
@@ -69,8 +71,8 @@ export function Sidebar({ role }: { role: 'admin' | 'client' | 'commissioner' | 
                             key={item.href}
                             href={item.href}
                             className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group ${isActive
-                                    ? 'bg-indigo-50/80 text-[#5347CE] font-semibold shadow-sm'
-                                    : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
+                                ? 'bg-indigo-50/80 text-[#5347CE] font-semibold shadow-sm'
+                                : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
                                 }`}
                         >
                             <Icon className={`w-5 h-5 ${isActive ? 'text-[#5347CE]' : 'text-gray-400 group-hover:text-gray-600'}`} />
@@ -100,13 +102,13 @@ export function Sidebar({ role }: { role: 'admin' | 'client' | 'commissioner' | 
             </nav>
 
             {/* User Footer */}
-            <div className="p-4 border-t border-gray-100">
+            <div className="mt-auto p-4 border-t border-gray-100 bg-gray-50/50">
                 <button
                     onClick={() => signOut({ callbackUrl: '/login' })}
-                    className="flex items-center gap-3 px-4 py-3 w-full rounded-xl text-gray-500 hover:bg-red-50 hover:text-red-600 transition-all"
+                    className="flex items-center gap-3 px-4 py-3 w-full rounded-xl text-gray-500 hover:bg-red-50/80 hover:text-red-600 hover:shadow-[0_2px_10px_rgba(239,68,68,0.1)] transition-all duration-300 group border border-transparent hover:border-red-100"
                 >
-                    <LogOut className="w-5 h-5" />
-                    Sign Out
+                    <LogOut className="w-5 h-5 transition-transform group-hover:-translate-x-1 group-hover:scale-110" />
+                    <span className="font-semibold">Logout</span>
                 </button>
             </div>
         </aside>

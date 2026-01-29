@@ -64,7 +64,7 @@ export const emailService = {
             </div>
             
             <div style="text-align: center;">
-                <a href="https://mikoagency22.netlify.app/dashboard/client" style="display: inline-block; padding: 12px 24px; background-color: #1f7a5a; color: white; text-decoration: none; border-radius: 6px; font-weight: bold;">Track Your Project</a>
+                <a href="${process.env.NEXTAUTH_URL}/dashboard/client" style="display: inline-block; padding: 12px 24px; background-color: #1f7a5a; color: white; text-decoration: none; border-radius: 6px; font-weight: bold;">Track Your Project</a>
             </div>
             
             <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
@@ -105,7 +105,7 @@ export const emailService = {
             <p style="color: #555; line-height: 1.5;">You can now communicate with your development team directly through the project workspace.</p>
             
             <div style="text-align: center; margin-top: 30px;">
-                <a href="https://mikoagency22.netlify.app/dashboard/client" style="display: inline-block; padding: 12px 24px; background-color: #1f7a5a; color: white; text-decoration: none; border-radius: 6px; font-weight: bold;">Open Workspace</a>
+                <a href="${process.env.NEXTAUTH_URL}/dashboard/client" style="display: inline-block; padding: 12px 24px; background-color: #1f7a5a; color: white; text-decoration: none; border-radius: 6px; font-weight: bold;">Open Workspace</a>
             </div>
             
             <p style="color: #999; font-size: 12px; text-align: center; margin-top: 40px;">Tech Developers Kenya & East Africa</p>
@@ -153,6 +153,103 @@ export const emailService = {
             
             <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
             <p style="color: #999; font-size: 12px; text-align: center;">Tech Developers Kenya - Empowering East African Innovation.</p>
+        </div>
+      `
+        });
+    },
+
+    /**
+     * Send client invitation email
+     */
+    async sendClientInvite(
+        to: string,
+        clientName: string,
+        commissionerName: string,
+        tempPassword: string
+    ) {
+        const resend = getResend();
+        if (!resend) return;
+        return await resend.emails.send({
+            from: 'Tech Developers <noreply@techdev.ke>',
+            to,
+            subject: `Invitation to Tech Developers from ${commissionerName}`,
+            html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
+            <div style="text-align: center; margin-bottom: 30px;">
+                <h1 style="color: #1f7a5a; margin: 0;">Welcome, ${clientName}!</h1>
+            </div>
+            
+            <p style="font-size: 16px; color: #333;"><strong>${commissionerName}</strong> has invited you to join their private workspace on Tech Developers Kenya.</p>
+            
+            <div style="background-color: #f9f9f9; padding: 20px; border-radius: 6px; margin: 25px 0;">
+                <p style="margin: 0 0 10px; color: #555;">Use these credentials to log in:</p>
+                <div style="background-color: white; padding: 15px; border: 1px solid #ddd; border-radius: 4px;">
+                    <p style="margin: 5px 0;"><strong>Email:</strong> ${to}</p>
+                    <p style="margin: 5px 0;"><strong>Temporary Password:</strong> <code style="background: #eee; padding: 2px 6px; border-radius: 4px;">${tempPassword}</code></p>
+                </div>
+            </div>
+            
+            <p style="color: #555;">Please log in and change your password immediately.</p>
+            
+            <div style="text-align: center; margin-top: 30px;">
+                <a href="${process.env.NEXTAUTH_URL}/login" style="display: inline-block; padding: 12px 24px; background-color: #1f7a5a; color: white; text-decoration: none; border-radius: 6px; font-weight: bold;">Log In Now</a>
+            </div>
+            
+            <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
+            <p style="color: #999; font-size: 12px; text-align: center;">Tech Developers Kenya & East Africa</p>
+        </div>
+      `
+        });
+    },
+
+    /**
+     * Send Invoice Email
+     */
+    async sendInvoice(
+        to: string,
+        clientName: string,
+        amount: number,
+        description: string,
+        invoiceNumber: string,
+        paymentUrl: string
+    ) {
+        const resend = getResend();
+        if (!resend) return;
+        return await resend.emails.send({
+            from: 'Tech Developers <billing@techdev.ke>',
+            to,
+            subject: `Invoice #${invoiceNumber} from Tech Developers`,
+            html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
+            <div style="text-align: center; margin-bottom: 30px;">
+                <h1 style="color: #1f7a5a; margin: 0;">Tech Developers</h1>
+                <p style="color: #666; font-size: 14px;">Invoice Due</p>
+            </div>
+            
+            <div style="background-color: #f9f9f9; padding: 20px; border-radius: 6px; margin-bottom: 25px;">
+                <h2 style="margin-top: 0; color: #333; font-size: 18px;">Invoice #${invoiceNumber}</h2>
+                <p style="font-size: 15px; color: #555;">Dear ${clientName}, a new invoice has been generated for your project.</p>
+                
+                <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
+                    <tr>
+                        <td style="padding: 8px 0; color: #777;">Description:</td>
+                        <td style="padding: 8px 0; font-weight: bold; text-align: right;">${description}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px 0; color: #777;">Amount:</td>
+                        <td style="padding: 8px 0; font-weight: bold; text-align: right; font-size: 18px;">KES ${amount.toLocaleString()}</td>
+                    </tr>
+                </table>
+            </div>
+            
+            <div style="text-align: center; margin: 40px 0;">
+                <a href="${paymentUrl}" style="display: inline-block; padding: 14px 28px; background-color: #1f7a5a; color: white; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 16px;">Pay Invoice Now</a>
+            </div>
+            
+            <p style="color: #777; font-size: 14px; text-align: center;">Click the button above to pay securely via Card or M-Pesa.</p>
+            
+            <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
+            <p style="color: #999; font-size: 12px; text-align: center;">Tech Developers Kenya & East Africa</p>
         </div>
       `
         });

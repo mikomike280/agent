@@ -5,15 +5,15 @@
 -- USERS
 -- =======================
 
-INSERT INTO users (id, email, name, phone, role, verified) VALUES
-('00000000-0000-0000-0000-000000000001', 'admin@techdev.ke', 'Admin User', '+254700000001', 'admin', true),
-('00000000-0000-0000-0000-000000000002', 'esther@commissions.ke', 'Esther Njeri', '+254700000002', 'commissioner', true),
-('00000000-0000-0000-0000-000000000003', 'paul@commissions.ke', 'Paul Kimani', '+254700000003', 'commissioner', true),
-('00000000-0000-0000-0000-000000000004', 'grace@commissions.ke', 'Grace Wanjiku', '+254700000004', 'commissioner', true),
-('00000000-0000-0000-0000-000000000005', 'aisha@devteam.co', 'Aisha Dube', '+254700000005', 'developer', true),
-('00000000-0000-0000-0000-000000000006', 'james@devteam.co', 'James Omondi', '+254700000006', 'developer', true),
-('00000000-0000-0000-0000-000000000007', 'client1@greenschool.ke', 'Green School Ltd', '+254700000007', 'client', true),
-('00000000-0000-0000-0000-000000000008', 'client2@retailcorp.ke', 'Retail Corp', '+254700000008', 'client', true);
+INSERT INTO users (id, email, name, phone, role, verified, password_hash) VALUES
+('00000000-0000-0000-0000-000000000001', 'admin@techdev.ke', 'Admin User', '+254700000001', 'admin', true, 'a109e36947ad56de1dca1cc49f0ef8ac9ad9a7b1aa0df41fb3c4cb73c1ff01ea'),
+('00000000-0000-0000-0000-000000000002', 'esther@commissions.ke', 'Esther Njeri', '+254700000002', 'commissioner', true, 'a109e36947ad56de1dca1cc49f0ef8ac9ad9a7b1aa0df41fb3c4cb73c1ff01ea'),
+('00000000-0000-0000-0000-000000000003', 'paul@commissions.ke', 'Paul Kimani', '+254700000003', 'commissioner', true, 'a109e36947ad56de1dca1cc49f0ef8ac9ad9a7b1aa0df41fb3c4cb73c1ff01ea'),
+('00000000-0000-0000-0000-000000000004', 'grace@commissions.ke', 'Grace Wanjiku', '+254700000004', 'commissioner', true, 'a109e36947ad56de1dca1cc49f0ef8ac9ad9a7b1aa0df41fb3c4cb73c1ff01ea'),
+('00000000-0000-0000-0000-000000000005', 'aisha@devteam.co', 'Aisha Dube', '+254700000005', 'developer', true, 'a109e36947ad56de1dca1cc49f0ef8ac9ad9a7b1aa0df41fb3c4cb73c1ff01ea'),
+('00000000-0000-0000-0000-000000000006', 'james@devteam.co', 'James Omondi', '+254700000006', 'developer', true, 'a109e36947ad56de1dca1cc49f0ef8ac9ad9a7b1aa0df41fb3c4cb73c1ff01ea'),
+('00000000-0000-0000-0000-000000000007', 'client1@greenschool.ke', 'Green School Ltd', '+254700000007', 'client', true, 'a109e36947ad56de1dca1cc49f0ef8ac9ad9a7b1aa0df41fb3c4cb73c1ff01ea'),
+('00000000-0000-0000-0000-000000000008', 'client2@retailcorp.ke', 'Retail Corp', '+254700000008', 'client', true, 'a109e36947ad56de1dca1cc49f0ef8ac9ad9a7b1aa0df41fb3c4cb73c1ff01ea');
 
 -- =======================
 -- COMPANIES

@@ -33,10 +33,13 @@ export async function POST(request: NextRequest) {
         // Handle different payment methods (Prioritizing Paystack)
         if (method === 'card' || method === 'mpesa' || method === 'paystack') {
             const response = await paystackPayments.initializeTransaction(
-                depositAmount,
                 client_email || lead.client_email,
-                lead_id,
-                successUrl
+                depositAmount,
+                successUrl,
+                {
+                    project_id: lead_id,
+                    payment_type: 'deposit'
+                }
             );
             paymentUrl = response.data.authorization_url;
             gatewayData = { reference: response.data.reference, access_code: response.data.access_code };

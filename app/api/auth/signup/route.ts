@@ -29,7 +29,6 @@ export async function POST(req: NextRequest) {
 
         // Determine approval status
         const verified = role === 'client'; // Auto-approve clients
-        const status = role === 'client' ? 'active' : 'pending_approval';
 
         // Create user
         const { data: newUser, error } = await supabaseAdmin
@@ -40,8 +39,8 @@ export async function POST(req: NextRequest) {
                 password_hash: passwordHash,
                 role,
                 phone,
-                verified,
-                status
+                verified
+                // removed status as it's missing from schema
             })
             .select()
             .single();
@@ -49,26 +48,34 @@ export async function POST(req: NextRequest) {
         if (error) {
             console.error('User creation error:', error);
             return NextResponse.json(
-                { success: false, message: 'Failed to create user' },
+                { success: false, message: `Failed to create user: ${error.message}` },
                 { status: 500 }
             );
         }
 
         // If commissioner or developer, create additional profile
         if (role === 'commissioner') {
-            await supabaseAdmin.from('commissioners').insert({
+            const referralCode = `REF-${name.substring(0, 3).toUpperCase()}-${crypto.randomBytes(3).toString('hex').toUpperCase()}`;
+            const { error: commError } = await supabaseAdmin.from('commissioners').insert({
                 user_id: newUser.id,
-                tier: 'bronze',
-                commission_rate: 25.0
+                tier: 'tier1', // Use schema-defined 'tier1' instead of 'bronze'
+                rate_percent: 25.0, // Use correct column name 'rate_percent'
+                referral_code: referralCode
             });
+
+            if (commError) {
+                console.error('Commissioner creation error:', commError);
+                // We keep the user but log the error
+            }
         }
 
         // Create audit log
         await supabaseAdmin.from('audit_logs').insert({
-            user_id: newUser.id,
+            actor_id: newUser.id,
+            actor_role: role,
             action: 'user_registration',
-            details: { role, status, email },
-            ip_address: req.headers.get('x-forwarded-for') || 'unknown'
+            details: { role, email },
+            // Removed ip_address as it's not in schema
         });
 
         // TODO: Send notification email

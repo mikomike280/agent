@@ -30,7 +30,7 @@ export default function DashboardLayout({
     const role = (session?.user as any)?.role || 'client';
 
     return (
-        <div className="min-h-screen bg-[#F5F7FA] font-sans text-[#1E293B]">
+        <div className="min-h-screen bg-[var(--bg-app)] font-sans text-[var(--text-primary)]">
             {/* Sidebar - Fixed Left */}
             <Sidebar role={role} />
 

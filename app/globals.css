@@ -1,33 +1,66 @@
 @import "tailwindcss";
 
 :root {
-  /* Brand Colors - Cool Tones */
-  --primary: #5347CE;
-  /* Deep Violet */
-  --primary-light: #887CFD;
-  /* Soft Violet */
-  --secondary: #4896FE;
-  /* Clear Blue */
-  --accent: #16C8C7;
-  /* Teal */
+  /* Light Mode (Default) */
+  --primary: #6366f1;
+  /* Indigo-500 */
+  --primary-light: #818cf8;
+  /* Indigo-400 */
+  --secondary: #3b82f6;
+  /* Blue-500 */
+  --accent: #14b8a6;
+  /* Teal-500 */
+  --gold: #f59e0b;
+  /* Amber-500 */
 
   /* Functional Colors */
-  --success: #34D399;
-  --warning: #FBBC05;
-  --danger: #EF4444;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --danger: #ef4444;
 
-  /* Backgrounds */
-  --bg-app: #F5F7FA;
-  --bg-card: #FFFFFF;
-  --bg-sidebar: #FFFFFF;
+  /* Backgrounds - Light Clean */
+  --bg-app: #f9fafb;
+  /* Gray-50 */
+  --bg-card: #ffffff;
+  /* White */
+  --bg-sidebar: #f8fafc;
+  /* Slate-50 */
+  --bg-input: #f3f4f6;
+  /* Gray-100 */
 
-  /* Text */
-  --text-primary: #1E293B;
-  --text-secondary: #64748B;
+  /* Text - High Contrast */
+  --text-primary: #111827;
+  /* Gray-900 */
+  --text-secondary: #4b5563;
+  /* Gray-600 */
+  --text-muted: #9ca3af;
+  /* Gray-400 */
 
-  /* Soft UI Shadows */
-  --shadow-soft: 0 4px 20px -2px rgba(83, 71, 206, 0.08);
-  --shadow-hover: 0 10px 25px -5px rgba(83, 71, 206, 0.15);
+  /* Shadows */
+  --shadow-soft: 0 4px 20px -2px rgba(99, 102, 241, 0.1);
+  --shadow-hover: 0 10px 30px -5px rgba(99, 102, 241, 0.2);
+}
+
+:root[class~="dark"] {
+  /* Dark Mode Overrides */
+  --bg-app: #030712;
+  /* Gray-950 */
+  --bg-card: #111827;
+  /* Gray-900 */
+  --bg-sidebar: #0f172a;
+  /* Slate-900 */
+  --bg-input: #1f2937;
+  /* Gray-800 */
+
+  --text-primary: #f9fafb;
+  /* Gray-50 */
+  --text-secondary: #9ca3af;
+  /* Gray-400 */
+  --text-muted: #6b7280;
+  /* Gray-500 */
+
+  --shadow-soft: 0 4px 20px -2px rgba(99, 102, 241, 0.15);
+  --shadow-hover: 0 10px 30px -5px rgba(99, 102, 241, 0.25);
 }
 
 @theme inline {
@@ -37,6 +70,103 @@
   --color-brand-soft: var(--primary-light);
   --color-brand-blue: var(--secondary);
   --color-brand-teal: var(--accent);
+  --color-brand-gold: var(--gold);
+
+  --color-bg-app: var(--bg-app);
+}
+
+body {
+  background-color: var(--bg-app);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Custom Utilities */
+.card-soft {
+  background: var(--bg-card);
+  border-radius: 16px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+}
+
+:root[class~="dark"] .card-soft {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.card-soft:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-hover);
+  border-color: rgba(99, 102, 241, 0.3);
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  color: white;
+  border-radius: 12px;
+  padding: 0.75rem 1.5rem;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.4);
+}
+
+.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(79, 70, 229, 0.5);
+  filter: brightness(1.1);
+}
+
+.sidebar-item {
+  border-radius: 12px;
+  color: var(--text-secondary);
+  transition: all 0.2s ease;
+}
+
+.sidebar-item.active {
+  background: rgba(99, 102, 241, 0.15);
+  color: var(--primary-light);
+  font-weight: 600;
+  border: 1px solid rgba(99, 102, 241, 0.2);
+}
+
+.sidebar-item:hover:not(.active) {
+  background: rgba(0, 0, 0, 0.05);
+  color: var(--text-primary);
+}
+
+:root[class~="dark"] .sidebar-item:hover:not(.active) {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* Scrollbar Customization */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-app);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--bg-input);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+@theme inline {
+  --font-sans: var(--font-outfit), sans-serif;
+
+  --color-brand-violet: var(--primary);
+  --color-brand-soft: var(--primary-light);
+  --color-brand-blue: var(--secondary);
+  --color-brand-teal: var(--accent);
+  --color-brand-gold: var(--gold);
 
   --color-bg-app: var(--bg-app);
 }
@@ -47,18 +177,21 @@ body {
   font-family: var(--font-sans);
 }
 
-/* Custom Utilities for Soft UI */
+/* Custom Utilities for Premium Dark UI */
 .card-soft {
   background: var(--bg-card);
   border-radius: 16px;
-  box-shadow: var(--shadow-soft);
-  border: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  /* Subtle White Border */
   transition: all 0.3s ease;
 }
 
 .card-soft:hover {
   transform: translateY(-2px);
   box-shadow: var(--shadow-hover);
+  border-color: rgba(99, 102, 241, 0.3);
+  /* Indigo Border on Hover */
 }
 
 .btn-primary {
@@ -66,14 +199,15 @@ body {
   color: white;
   border-radius: 12px;
   padding: 0.75rem 1.5rem;
-  font-weight: 500;
+  font-weight: 600;
   transition: all 0.2s ease;
-  box-shadow: 0 4px 12px rgba(72, 150, 254, 0.25);
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.4);
 }
 
 .btn-primary:hover {
   transform: translateY(-1px);
-  box-shadow: 0 6px 16px rgba(72, 150, 254, 0.35);
+  box-shadow: 0 6px 16px rgba(79, 70, 229, 0.5);
+  filter: brightness(1.1);
 }
 
 .sidebar-item {
@@ -83,12 +217,32 @@ body {
 }
 
 .sidebar-item.active {
-  background: rgba(83, 71, 206, 0.08);
-  color: var(--primary);
+  background: rgba(99, 102, 241, 0.15);
+  color: var(--primary-light);
   font-weight: 600;
+  border: 1px solid rgba(99, 102, 241, 0.2);
 }
 
 .sidebar-item:hover:not(.active) {
-  background: rgba(0, 0, 0, 0.03);
+  background: rgba(255, 255, 255, 0.05);
   color: var(--text-primary);
+}
+
+/* Scrollbar Customization */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-app);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--bg-input);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
 }

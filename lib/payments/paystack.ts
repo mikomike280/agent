@@ -10,19 +10,19 @@ export const paystackPayments = {
      * Initialize payment transaction
      */
     async initializeTransaction(
-        amount: number,
         email: string,
-        projectId: string,
-        callbackUrl: string
+        amount: number,
+        callbackUrl?: string,
+        metadata: any = {}
     ) {
         const payload = {
             amount: Math.round(amount * 100), // Convert to kobo/cents
             email,
             currency: 'KES',
-            callback_url: callbackUrl,
+            callback_url: callbackUrl || `${process.env.NEXTAUTH_URL}/payment/verify`,
             metadata: {
-                project_id: projectId,
-                payment_type: 'deposit'
+                payment_type: 'invoice', // Default
+                ...metadata
             },
             channels: ['card', 'bank', 'mobile_money', 'bank_transfer']
         };

@@ -4,6 +4,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Shield, CheckCircle, Phone, Mail, Calendar } from 'lucide-react';
+import { Dialog } from '@/components/ui/dialog';
 
 interface IntakeData {
     lead: {
@@ -49,8 +50,16 @@ export default function IntakePage() {
             .catch(() => setLoading(false));
     }, [token]);
 
+    const [email, setEmail] = useState('');
+    const [phone, setPhone] = useState('');
+
     const handlePayDeposit = async () => {
         if (!data) return;
+        if (!email || !phone) {
+            alert('Please provide your email and phone number to proceed.');
+            return;
+        }
+
         setPaymentLoading(true);
 
         try {
@@ -60,8 +69,8 @@ export default function IntakePage() {
                 body: JSON.stringify({
                     lead_id: data.lead.id,
                     method: selectedMethod,
-                    client_email: 'client@example.com', // TODO: Get from form
-                    client_phone: '+254700000000' // TODO: Get from form
+                    client_email: email,
+                    client_phone: phone
                 })
             });
 
@@ -164,9 +173,33 @@ export default function IntakePage() {
                             {/* Pay Deposit */}
                             <div className="border-2 border-[#1f7a5a] rounded-lg p-6">
                                 <h3 className="text-lg font-bold text-gray-900 mb-2">Pay 43% deposit to start</h3>
-                                <p className="text-3xl font-bold text-[#1f7a5a] mb-4">
+                                <p className="text-3xl font-bold text-[#1f7a5a] mb-6">
                                     KES {depositAmount.toLocaleString()}
                                 </p>
+
+                                {/* Client Details Form */}
+                                <div className="space-y-4 mb-6">
+                                    <div>
+                                        <label className="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2">Your Email</label>
+                                        <input
+                                            type="email"
+                                            value={email}
+                                            onChange={(e) => setEmail(e.target.value)}
+                                            placeholder="client@example.com"
+                                            className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl outline-none focus:ring-2 focus:ring-[#1f7a5a]"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2">Phone Number</label>
+                                        <input
+                                            type="tel"
+                                            value={phone}
+                                            onChange={(e) => setPhone(e.target.value)}
+                                            placeholder="+254..."
+                                            className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl outline-none focus:ring-2 focus:ring-[#1f7a5a]"
+                                        />
+                                    </div>
+                                </div>
 
                                 {/* Payment Method Selection */}
                                 <div className="space-y-3 mb-4">
@@ -211,11 +244,57 @@ export default function IntakePage() {
                                 </button>
                             </div>
 
+                            import {Dialog} from '@/components/ui/dialog';
+
+                            // ... (existing imports)
+
+                            export default function IntakePage() {
+    // ... (existing state)
+    const [isScheduleOpen, setIsScheduleOpen] = useState(false);
+                            const [scheduleLoading, setScheduleLoading] = useState(false);
+
+    const handleScheduleSubmit = async (e: React.FormEvent) => {
+                                e.preventDefault();
+                            setScheduleLoading(true);
+        // Simulate API call
+        await new Promise(resolve => setTimeout(resolve, 1500));
+                            setScheduleLoading(false);
+                            setIsScheduleOpen(false);
+                            alert('Meeting request sent! The commissioner will confirm via email.');
+    };
+
+                            // ... (existing render)
+
                             {/* Schedule Call */}
-                            <button className="w-full py-4 border-2 border-gray-300 text-gray-700 rounded-lg font-semibold hover:border-[#1f7a5a] hover:text-[#1f7a5a] flex items-center justify-center gap-2">
+                            <button
+                                onClick={() => setIsScheduleOpen(true)}
+                                className="w-full py-4 border-2 border-gray-300 text-gray-700 rounded-lg font-semibold hover:border-[#1f7a5a] hover:text-[#1f7a5a] flex items-center justify-center gap-2"
+                            >
                                 <Calendar className="w-5 h-5" />
                                 Schedule a free 15-minute call
                             </button>
+
+                            <Dialog isOpen={isScheduleOpen} onClose={() => setIsScheduleOpen(false)} title="Schedule Consultation">
+                                <div className="space-y-4">
+                                    <p className="text-sm text-gray-600">
+                                        Choose a time for a quick 15-minute intro call with {data.commissioner.name}.
+                                    </p>
+                                    <div className="grid grid-cols-2 gap-2">
+                                        {['Tomorrow 10:00 AM', 'Tomorrow 2:00 PM', 'Wed 11:00 AM', 'Thu 4:00 PM'].map((time) => (
+                                            <button key={time} className="p-3 border rounded-lg hover:border-[#1f7a5a] hover:bg-[#1f7a5a]/5 text-sm font-medium transition-colors">
+                                                {time}
+                                            </button>
+                                        ))}
+                                    </div>
+                                    <button
+                                        onClick={handleScheduleSubmit}
+                                        disabled={scheduleLoading}
+                                        className="w-full py-3 bg-[#1f7a5a] text-white rounded-xl font-bold hover:bg-[#176549] transition-all disabled:opacity-50"
+                                    >
+                                        {scheduleLoading ? 'Sending Request...' : 'Confirm Request'}
+                                    </button>
+                                </div>
+                            </Dialog>
                         </div>
 
                         {/* Project Summary Accordion */}

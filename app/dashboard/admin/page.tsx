@@ -3,7 +3,8 @@
 
 import { useSession } from 'next-auth/react';
 import { useState, useEffect } from 'react';
-import { CheckCircle, AlertCircle, Shield, DollarSign, Eye } from 'lucide-react';
+import { RevenueLineChart } from '@/components/ui/charts';
+import { CheckCircle, AlertCircle, Shield, DollarSign, Eye, TrendingUp } from 'lucide-react';
 
 import { Card } from '@/components/ui/card';
 
@@ -275,7 +276,7 @@ export default function AdminDashboard() {
                         <div key={i} className="p-4 flex items-center justify-between hover:bg-gray-50/50 transition-colors">
                             <div className="flex items-center gap-4">
                                 <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${i === 1 ? 'bg-green-50 text-green-600' :
-                                        i === 2 ? 'bg-blue-50 text-blue-600' : 'bg-red-50 text-red-600'
+                                    i === 2 ? 'bg-blue-50 text-blue-600' : 'bg-red-50 text-red-600'
                                     }`}>
                                     {i === 1 ? <Shield className="w-5 h-5" /> : i === 2 ? <DollarSign className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
                                 </div>
@@ -289,7 +290,7 @@ export default function AdminDashboard() {
                             </div>
                             <div className="text-right">
                                 <p className={`font-bold ${i === 1 ? 'text-green-600' :
-                                        i === 2 ? 'text-blue-600' : 'text-red-600'
+                                    i === 2 ? 'text-blue-600' : 'text-red-600'
                                     }`}>
                                     {i === 3 ? '-' : '+'}KES {150 * i},000
                                 </p>

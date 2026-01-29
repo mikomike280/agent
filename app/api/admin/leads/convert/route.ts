@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/db';
 import { getServerSession } from 'next-auth';
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 
 export async function POST(req: Request) {
     try {
@@ -64,6 +64,8 @@ export async function POST(req: Request) {
             .eq('user_id', userId)
             .single();
 
+        if (!client) throw new Error('Client profile not found');
+
         // 3. Create Project
         const { data: project, error: projectError } = await supabaseAdmin
             .from('projects')
@@ -81,7 +83,6 @@ export async function POST(req: Request) {
             .single();
 
         if (projectError) throw projectError;
-        if (!client) throw new Error('Client profile not found');
 
         // 4. Create Standard Milestones (43% Deposit, 57% Final)
         const milestones = [
