@@ -8,6 +8,7 @@ import { Card } from '@/components/ui/card';
 import Link from 'next/link';
 import ProjectFileManager from '@/components/projects/ProjectFileManager';
 import ProjectChat from '@/components/dashboard/ProjectChat';
+import MilestoneProgress from '@/components/client/MilestoneProgress';
 
 interface Project {
     id: string;
@@ -36,9 +37,11 @@ export default function ProjectDetailPage() {
     const { data: session } = useSession();
     const [project, setProject] = useState<Project | null>(null);
     const [loading, setLoading] = useState(true);
+    const [milestones, setMilestones] = useState<any[]>([]);
 
     useEffect(() => {
         fetchProject();
+        fetchMilestones();
     }, [params.id]);
 
     const fetchProject = async () => {
@@ -52,6 +55,18 @@ export default function ProjectDetailPage() {
             console.error('Error fetching project:', error);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const fetchMilestones = async () => {
+        try {
+            const response = await fetch(`/api/projects/${params.id}/milestones`);
+            if (response.ok) {
+                const data = await response.json();
+                setMilestones(data);
+            }
+        } catch (error) {
+            console.error('Error fetching milestones:', error);
         }
     };
 
@@ -116,39 +131,15 @@ export default function ProjectDetailPage() {
                     <Card className="p-6">
                         <h2 className="text-xl font-bold text-[var(--text-primary)] mb-4 flex items-center gap-2">
                             <CheckCircle className="w-6 h-6" />
-                            Milestones
+                            Project Milestones & Progress
                         </h2>
-                        {project.milestones && project.milestones.length > 0 ? (
-                            <div className="space-y-4">
-                                {project.milestones.map((milestone, index) => (
-                                    <div
+                        {milestones && milestones.length > 0 ? (
+                            <div className="space-y-6">
+                                {milestones.map((milestone) => (
+                                    <MilestoneProgress
                                         key={milestone.id}
-                                        className="p-4 bg-[var(--bg-input)] rounded-xl flex items-center justify-between"
-                                    >
-                                        <div className="flex items-center gap-4">
-                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center ${milestone.status === 'completed' ? 'bg-green-500 text-white' : 'bg-[var(--bg-card)] text-[var(--text-secondary)]'}`}>
-                                                {index + 1}
-                                            </div>
-                                            <div>
-                                                <p className="font-semibold text-[var(--text-primary)]">
-                                                    {milestone.title}
-                                                </p>
-                                                <p className="text-xs text-[var(--text-secondary)]">
-                                                    Status: {milestone.status}
-                                                </p>
-                                            </div>
-                                        </div>
-                                        {milestone.deliverable_link && (
-                                            <a
-                                                href={milestone.deliverable_link}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="text-sm text-[var(--primary)] hover:underline"
-                                            >
-                                                View Deliverable
-                                            </a>
-                                        )}
-                                    </div>
+                                        milestone={milestone}
+                                    />
                                 ))}
                             </div>
                         ) : (

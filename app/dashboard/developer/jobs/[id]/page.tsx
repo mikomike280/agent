@@ -8,6 +8,7 @@ import { Card } from '@/components/ui/card';
 import Link from 'next/link';
 import ProjectFileManager from '@/components/projects/ProjectFileManager';
 import ProjectChat from '@/components/dashboard/ProjectChat';
+import MilestoneChecklist from '@/components/developer/MilestoneChecklist';
 
 export default function DeveloperProjectDetailPage() {
     const params = useParams();
@@ -15,9 +16,11 @@ export default function DeveloperProjectDetailPage() {
     const { data: session } = useSession();
     const [project, setProject] = useState<any>(null);
     const [loading, setLoading] = useState(true);
+    const [milestones, setMilestones] = useState<any[]>([]);
 
     useEffect(() => {
         fetchProject();
+        fetchMilestones();
     }, [params.id]);
 
     const fetchProject = async () => {
@@ -33,6 +36,22 @@ export default function DeveloperProjectDetailPage() {
         } finally {
             setLoading(false);
         }
+    };
+
+    const fetchMilestones = async () => {
+        try {
+            const response = await fetch(`/api/projects/${params.id}/milestones`);
+            if (response.ok) {
+                const data = await response.json();
+                setMilestones(data);
+            }
+        } catch (error) {
+            console.error('Error fetching milestones:', error);
+        }
+    };
+
+    const handleMilestoneUpdate = (updatedMilestone: any) => {
+        setMilestones(prev => prev.map(m => m.id === updatedMilestone.id ? updatedMilestone : m));
     };
 
     if (loading) return <div className="p-12 flex justify-center"><Loader2 className="animate-spin" /></div>;
@@ -72,7 +91,27 @@ export default function DeveloperProjectDetailPage() {
                         </p>
                     </Card>
 
+
                     <ProjectFileManager projectId={params.id as string} />
+
+                    {/* Milestones Section */}
+                    {milestones.length > 0 && (
+                        <Card className="p-8 border-gray-100">
+                            <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+                                <CheckCircle className="w-6 h-6 text-green-600" />
+                                Project Milestones
+                            </h2>
+                            <div className="space-y-6">
+                                {milestones.map((milestone) => (
+                                    <MilestoneChecklist
+                                        key={milestone.id}
+                                        milestone={milestone}
+                                        onUpdate={handleMilestoneUpdate}
+                                    />
+                                ))}
+                            </div>
+                        </Card>
+                    )}
                 </div>
 
                 {/* Sidebar */}
