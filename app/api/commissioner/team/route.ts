@@ -24,8 +24,6 @@ export async function GET(req: Request) {
         }
 
         // 2. Fetch Downline (direct referrals)
-        // We also want to know their revenue. For now, let's just get the list.
-        // In a real app, we'd join with 'projects' or 'commissions' table to sum earnings.
         const { data: downline } = await supabaseAdmin
             .from('commissioners')
             .select(`
@@ -36,15 +34,32 @@ export async function GET(req: Request) {
             `)
             .eq('parent_commissioner_id', me.id);
 
-        // 3. Mock revenue calculation for demo purposes
-        const teamData = downline?.map((agent: any) => ({
-            id: agent.id,
-            name: agent.user?.name || 'Unknown',
-            level: agent.tier || 'bronze',
-            joined: new Date(agent.created_at).toLocaleDateString(),
-            revenue: 0,
-            my_earnings: 0
-        })) || [];
+        // 3. Calculate actual revenue and overrides for EACH downline agent
+        const teamData = await Promise.all((downline || []).map(async (agent: any) => {
+            // Get all projects for this agent
+            const { data: projData } = await supabaseAdmin
+                .from('projects')
+                .select('budget')
+                .eq('commissioner_id', agent.id)
+                .eq('status', 'completed'); // Only completed projects count for revenue summary
+
+            const revenue = projData?.reduce((sum, p) => sum + Number(p.budget), 0) || 0;
+
+            // Parent gets 5% override of agent's revenue (as per specification)
+            const my_earnings = revenue * 0.05;
+
+            return {
+                id: agent.id,
+                name: agent.user?.name || 'Unknown',
+                level: agent.tier || 'bronze',
+                joined: new Date(agent.created_at).toLocaleDateString(),
+                revenue,
+                my_earnings
+            };
+        }));
+
+        const totalTeamRevenue = teamData.reduce((sum, a) => sum + a.revenue, 0);
+        const totalOverrides = teamData.reduce((sum, a) => sum + a.my_earnings, 0);
 
         return NextResponse.json({
             referralCode: me.referral_code,
@@ -52,8 +67,8 @@ export async function GET(req: Request) {
             downline: teamData,
             stats: {
                 totalAgents: teamData.length,
-                teamRevenue: 0,
-                lifetimeOverrides: 0
+                teamRevenue: totalTeamRevenue,
+                lifetimeOverrides: totalOverrides
             }
         });
 

@@ -1,43 +1,57 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
-import { MoreHorizontal, Plus, ChevronLeft, Calendar, DollarSign, User } from 'lucide-react';
+import { MoreHorizontal, Plus, ChevronLeft, Calendar, DollarSign, User, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 
-// Mock Data Types
-type ProjectStatus = 'New' | 'Scoped' | 'Deposit Pending' | 'Active' | 'Completed';
+// Data Types
+type ProjectStatus = 'pending' | 'active' | 'completed' | 'on_hold' | 'cancelled';
 
 interface ProjectCard {
     id: string;
-    client: string;
+    client: { name: string } | string;
     title: string;
-    value: string;
-    dueDate: string;
+    budget: number | string;
+    timeline: string;
     status: ProjectStatus;
 }
 
-const mockProjects: ProjectCard[] = [
-    { id: '1', client: 'Acme Corp', title: 'Marketing Website', value: 'KES 150,000', dueDate: 'Oct 25', status: 'New' },
-    { id: '2', client: 'John Doe', title: 'Portfolio Site', value: 'KES 45,000', dueDate: 'Oct 20', status: 'Scoped' },
-    { id: '3', client: 'TechStart', title: 'MVP Development', value: 'KES 450,000', dueDate: 'Nov 10', status: 'Deposit Pending' },
-    { id: '4', client: 'Sarah Smith', title: 'E-com Store', value: 'KES 120,000', dueDate: 'Oct 15', status: 'Active' },
-    { id: '5', client: 'Global Systems', title: 'Dashboard UI', value: 'KES 85,000', dueDate: 'Oct 30', status: 'Active' },
-];
-
 const columns: { title: string; status: ProjectStatus; color: string }[] = [
-    { title: 'New / Leads', status: 'New', color: 'bg-gray-100 border-gray-200' },
-    { title: 'Scoped', status: 'Scoped', color: 'bg-blue-50 border-blue-100' },
-    { title: 'Deposit Pending', status: 'Deposit Pending', color: 'bg-yellow-50 border-yellow-100' },
-    { title: 'Active', status: 'Active', color: 'bg-green-50 border-green-100' },
-    { title: 'Completed', status: 'Completed', color: 'bg-indigo-50 border-indigo-100' },
+    { title: 'New / Pending', status: 'pending', color: 'bg-gray-100 border-gray-200' },
+    { title: 'In Progress', status: 'active', color: 'bg-indigo-50 border-indigo-100' },
+    { title: 'On Hold', status: 'on_hold', color: 'bg-yellow-50 border-yellow-100' },
+    { title: 'Completed', status: 'completed', color: 'bg-green-50 border-green-100' },
 ];
 
 export default function PipelinePage() {
-    const [projects, setProjects] = useState<ProjectCard[]>(mockProjects);
+    const [projects, setProjects] = useState<ProjectCard[]>([]);
+    const [loading, setLoading] = useState(true);
 
-    // Simple drag and drop simulation (or just filtering for MVP)
-    // For MVP, we render lists filtered by status.
+    useEffect(() => {
+        const fetchProjects = async () => {
+            try {
+                const res = await fetch('/api/projects');
+                const data = await res.json();
+                if (data.success) {
+                    setProjects(data.data);
+                }
+            } catch (error) {
+                console.error('Error fetching pipeline projects:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchProjects();
+    }, []);
+
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center min-h-[60vh]">
+                <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-6 h-[calc(100vh-100px)] flex flex-col">
@@ -80,17 +94,17 @@ export default function PipelinePage() {
 
                                             <div className="flex items-center gap-2 text-xs text-gray-500 mb-3">
                                                 <User className="w-3 h-3" />
-                                                {project.client}
+                                                {typeof project.client === 'object' ? project.client.name : 'Unknown Client'}
                                             </div>
 
                                             <div className="flex items-center justify-between text-xs font-semibold pt-3 border-t border-gray-50">
                                                 <div className="flex items-center gap-1 text-gray-600">
                                                     <DollarSign className="w-3 h-3" />
-                                                    {project.value}
+                                                    KES {Number(project.budget).toLocaleString()}
                                                 </div>
                                                 <div className="flex items-center gap-1 text-gray-400">
                                                     <Calendar className="w-3 h-3" />
-                                                    {project.dueDate}
+                                                    {project.timeline}
                                                 </div>
                                             </div>
                                         </Card>

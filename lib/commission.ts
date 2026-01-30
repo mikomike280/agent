@@ -141,9 +141,24 @@ export async function createCommissionRecords(
             }
         }
 
+        // Anti-duplication: Check if commissions already exist for this project
+        const { data: existingComms } = await supabaseAdmin
+            .from('commissions')
+            .select('id')
+            .eq('project_id', projectId)
+            .limit(1);
+
+        if (existingComms && existingComms.length > 0) {
+            return {
+                success: true,
+                message: 'Commissions already calculated for this project',
+                breakdown,
+            };
+        }
+
         // Insert commission transactions
         const { data, error } = await supabaseAdmin
-            .from('commission_transactions')
+            .from('commissions')
             .insert(transactions)
             .select();
 

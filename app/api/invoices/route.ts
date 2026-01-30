@@ -54,16 +54,48 @@ export async function POST(request: NextRequest) {
             items // Dynamic Array of { description, quantity, unit_price, total_price }
         } = body;
 
+        const userId = (session.user as any).id;
+        const userRole = (session.user as any).role;
+
+        let activeCommId = commissioner_id;
+
+        // Ensure we have a commissioner ID if not admin
+        if (userRole === 'commissioner' && !activeCommId) {
+            const { data: comm } = await supabaseAdmin
+                .from('commissioners')
+                .select('id')
+                .eq('user_id', userId)
+                .single();
+            if (comm) activeCommId = comm.id;
+        }
+
+        if (!activeCommId && userRole !== 'admin') {
+            return NextResponse.json({ error: 'Commissioner profile required to create invoices' }, { status: 403 });
+        }
+
+        // 0. Anti-duplication: Check for identical pending invoice in the last 5 minutes
+        const { data: existing } = await supabaseAdmin
+            .from('invoices')
+            .select('id')
+            .eq('project_id', project_id)
+            .eq('amount', amount)
+            .eq('status', 'pending_approval')
+            .gt('created_at', new Date(Date.now() - 5 * 60 * 1000).toISOString());
+
+        if (existing && existing.length > 0) {
+            return NextResponse.json({ error: 'A similar pending invoice was already submitted recently' }, { status: 409 });
+        }
+
         // 1. Create invoice in DB with 'pending_approval' status
         const { data: invoice, error } = await supabaseAdmin
             .from('invoices')
             .insert({
-                client_id,
+                client_id: client_id || null,
                 project_id,
-                commissioner_id: commissioner_id || (session.user as any).id,
+                commissioner_id: activeCommId,
                 amount,
                 description,
-                invoice_number,
+                invoice_number: invoice_number || `INV-${Date.now()}`,
                 status: 'pending_approval',
                 currency: 'KES'
             })

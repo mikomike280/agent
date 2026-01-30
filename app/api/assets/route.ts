@@ -1,27 +1,28 @@
-import { createClient } from '@supabase/supabase-js';
+import { NextResponse } from 'next/server';
+import { supabaseAdmin } from '@/lib/db';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { NextResponse } from 'next/server';
 
-const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
-
-export async function GET(req: Request) {
+export async function GET() {
     try {
         const session = await getServerSession(authOptions);
-        if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        if (!session?.user) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
 
-        const { data: assets, error } = await supabase
+        const { data, error } = await supabaseAdmin
             .from('marketing_assets')
             .select('*')
             .order('created_at', { ascending: false });
 
         if (error) throw error;
 
-        return NextResponse.json({ success: true, data: assets });
+        return NextResponse.json({
+            success: true,
+            data
+        });
     } catch (error: any) {
-        return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+        console.error('Error fetching marketing assets:', error);
+        return NextResponse.json({ error: error.message }, { status: 500 });
     }
 }

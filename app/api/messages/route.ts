@@ -14,9 +14,23 @@ export async function GET(req: Request) {
 
     const { searchParams } = new URL(req.url);
     const conversationId = searchParams.get('conversationId');
+    const projectId = searchParams.get('projectId');
 
     try {
-        if (conversationId) {
+        if (projectId) {
+            // Get messages for a specific project
+            const { data, error } = await supabase
+                .from('messages')
+                .select(`
+                    *,
+                    sender:users(name, role)
+                `)
+                .eq('project_id', projectId)
+                .order('created_at', { ascending: true });
+
+            if (error) throw error;
+            return NextResponse.json({ success: true, data });
+        } else if (conversationId) {
             // Get messages for a specific conversation
             const { data, error } = await supabase
                 .from('messages')
@@ -62,35 +76,15 @@ export async function POST(req: Request) {
 
         let activeConvId = conversationId;
 
-        // If no conversationId, create one (direct or project-based)
-        if (!activeConvId) {
-            const { data: newConv, error: convError } = await supabase
-                .from('conversations')
-                .insert([{ project_id: projectId || null, title: projectId ? 'Project Discussion' : 'Direct Message' }])
-                .select()
-                .single();
-
-            if (convError) throw convError;
-            activeConvId = newConv.id;
-
-            // Add participants
-            const participants = [
-                { conversation_id: activeConvId, user_id: userId },
-                { conversation_id: activeConvId, user_id: recipientId }
-            ].filter(p => p.user_id); // Ensure recipientId exists
-
-            const { error: partError } = await supabase
-                .from('conversation_participants')
-                .insert(participants);
-
-            if (partError) throw partError;
-        }
+        // If no conversationId but has projectId, we might want to find/create a project conversation
+        // However, the ProjectChat component uses project_id directly in the messages table.
 
         // Insert message
         const { data, error } = await supabase
             .from('messages')
             .insert([{
-                conversation_id: activeConvId,
+                conversation_id: activeConvId || null,
+                project_id: projectId || null,
                 sender_id: userId,
                 content
             }])
@@ -99,11 +93,13 @@ export async function POST(req: Request) {
 
         if (error) throw error;
 
-        // Update conversation updated_at
-        await supabase
-            .from('conversations')
-            .update({ updated_at: new Date().toISOString() })
-            .eq('id', activeConvId);
+        // If part of a conversation, update updated_at
+        if (activeConvId) {
+            await supabase
+                .from('conversations')
+                .update({ updated_at: new Date().toISOString() })
+                .eq('id', activeConvId);
+        }
 
         return NextResponse.json({ success: true, data });
     } catch (error: any) {

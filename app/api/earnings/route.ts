@@ -14,7 +14,18 @@ export async function GET(req: NextRequest) {
 
     try {
         if (role === 'commissioner') {
-            // Fetch commissions for this commissioner
+            // Get commissioner ID for this user
+            const { data: commissioner } = await supabaseAdmin
+                .from('commissioners')
+                .select('id')
+                .eq('user_id', userId)
+                .single();
+
+            if (!commissioner) {
+                return NextResponse.json({ success: true, data: [] });
+            }
+
+            // Fetch commissions for this commissioner only
             const { data: earnings, error } = await supabaseAdmin
                 .from('commissions')
                 .select(`
@@ -24,6 +35,7 @@ export async function GET(req: NextRequest) {
                         total_value
                     )
                 `)
+                .eq('commissioner_id', commissioner.id)
                 .order('created_at', { ascending: false });
 
             if (error) throw error;
